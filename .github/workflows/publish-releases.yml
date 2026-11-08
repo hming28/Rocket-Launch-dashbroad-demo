@@ -1,0 +1,61 @@
+name: Publish GitHub Releases
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-releases.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Release v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v1.0.0 dist/aether-9-v1.0.html \
+            --title "AETHER-9 v1.0.0: Initial Interactive Prototype" \
+            --notes "### 🚀 AETHER-9 Release v1.0.0 (Initial Prototype)
+
+          - **72px 极简单层底栏 + 58px 线性时间轴**
+          - 420s 火箭遥测时序方程与基础动画验证
+          - 基础发动机矩阵与右侧折叠抽屉
+          - 纯前端零外部依赖，支持直接在浏览器中双击打开运行" || echo "v1.0.0 already published"
+
+      - name: Create Release v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v2.0.0 dist/aether-9-v2.0.html \
+            --title "AETHER-9 v2.0.0: Dual-Mode Compact Dashboard" \
+            --notes "### 🚀 AETHER-9 Release v2.0.0 (Dual-Mode Compact Console)
+
+          - **双模式架构**：首创公众版（148px 极简流媒体风）与工程版（200px 紧凑仪表盘）双模式
+          - **经典书签式卡片槽位**：左右自适应换槽与状态动态展示
+          - **Octaweb 9 发动机矩阵**：支持实时点击故障注入与推力影响仿真
+          - **航天级安全机制**：ABORT 按钮带长按 1 秒防误触进度与状态锁定
+          - **国际化与纯前端**：中英双语一键切换，纯原生 Canvas 与 Web Audio 音效" || echo "v2.0.0 already published"
+
+      - name: Create Release v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v3.0.0 dist/aether-9-v3.0.html \
+            --title "AETHER-9 v3.0.0: Full Multi-View Mission Control System" \
+            --notes "### 🚀 AETHER-9 Release v3.0.0 (Flagship Mission Control Console)
+
+          - **ISA-101 工业级人机界面规范**：总览视图 + 6 大岗位专业席位（FLIGHT, FDO, PROP, GNC, LOAD, REC）
+          - **走廊图与动态趋势图**：CorridorPlot 轨迹走廊与参数实时偏差监控
+          - **ISA-101 分级报警引擎**：A01~A12 报警规则、5s 防抖、2s 回差与 GO/NO-GO 席位轮询板
+          - **Schema 2 动态布局编辑器**：自动时序调度模式 vs 自定义槽位替换与预设加载
+          - **100% 自动化测试验证**：经过 8 项 Chrome DevTools Protocol (CDP) 无头端到端验收测试
+          - **单文件便携分发**：零第三方依赖，毫秒级冷启动，支持直接双击运行或离线部署" || echo "v3.0.0 already published"
