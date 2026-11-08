@@ -98,8 +98,8 @@
 ### 方式 2：使用本地静态服务器
 ```bash
 # 克隆代码仓库
-git clone https://github.com/your-username/aether-9.git
-cd aether-9
+git clone https://github.com/hming28/Rocket-Launch-dashbroad-demo.git
+cd Rocket-Launch-dashbroad-demo
 
 # 使用 npx 启动静态服务
 npm start
