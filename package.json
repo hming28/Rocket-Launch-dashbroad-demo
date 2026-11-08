@@ -1,0 +1,29 @@
+{
+  "name": "aether-9",
+  "version": "3.0.0",
+  "description": "AETHER-9 Aerospace Mission Control & Flight Telemetry Console (v1-v3 Suite)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 3000 .",
+    "build": "node scripts/build.js",
+    "build:all": "node scripts/release_all.js",
+    "test": "python tests/cdp_verify.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/aether-9.git"
+  },
+  "keywords": [
+    "aerospace",
+    "mission-control",
+    "telemetry",
+    "spacex",
+    "nasa",
+    "flight-simulation",
+    "isa-101",
+    "canvas",
+    "web-audio"
+  ],
+  "author": "AETHER-9 Contributors",
+  "license": "MIT"
+}

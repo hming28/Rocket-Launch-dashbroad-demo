@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AETHER-9 飞行控制台</title>
+<style>
+:root {
+  --bg: #05070B;
+  --tx: #F4F7FA;
+  --t2: #8A94A3;
+  --ac: #4FD1FF;
+  --wn: #FFB020;
+  --cr: #FF4D5E;
+  --ln: rgba(255, 255, 255, 0.09);
+  color-scheme: dark;
+  box-sizing: border-box;
+}
+*, *:before, *:after { box-sizing: inherit; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Space Grotesk', 'Inter', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+#app {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, #05070B 0%, #0A1522 48%, #16283A 74%, #0B0F15 74.1%, #07090D 100%);
+}
+#ph3d {
+  position: absolute;
+  left: 0; right: 0; top: 40%;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: .32em;
+  color: rgba(138, 148, 163, 0.45);
+  pointer-events: none;
+}
+#vg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5,7,11,0.75), rgba(5,7,11,0) 140px);
+  pointer-events: none;
+}
+
+/* Typography & Common Utilities */
+.lb {
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--t2);
+  font-weight: 500;
+  line-height: 1.2;
+}
+.m {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
+}
+.row span:first-child { font-size: 12px; color: var(--t2); }
+button {
+  font-family: inherit;
+  color: var(--tx);
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+.pill {
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(5, 7, 11, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  height: 30px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+}
+.pill:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+.bt {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+}
+.bt.pr {
+  background: var(--ac);
+  color: #05202B;
+  border-color: var(--ac);
+  font-weight: 600;
+}
+.bt.pr:hover {
+  background: #6fe0ff;
+}
+.bt.go {
+  border-radius: 22px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+.bt.ab {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 77, 94, 0.6);
+  color: var(--cr);
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: 0 16px;
+  height: 40px;
+}
+.bt.ab #abf {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: rgba(255, 77, 94, 0.38);
+  pointer-events: none;
+}
+.bt.ab span { position: relative; z-index: 2; }
+.sim-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 176, 32, 0.16);
+  color: var(--wn);
+  border: 1px solid rgba(255, 176, 32, 0.4);
+  font-weight: 600;
+  letter-spacing: .06em;
+  display: inline-block;
+}
+
+/* ==================== 顶栏 (Top Bar) ==================== */
+#bar-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ln);
+  background: rgba(5, 7, 11, 0.72);
+  z-index: 30;
+}
+.top-left {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--tx);
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 分段开关 (Segmented Switch: 公众 | 工程) */
+.seg-switch {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 2px;
+  height: 30px;
+}
+.seg-opt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--t2);
+  border-radius: 6px;
+  transition: all .15s ease;
+}
+.seg-opt.active {
+  background: var(--ac);
+  color: #05202B;
+}
+
+/* ==================== 顶部居中事件横幅 ==================== */
+#banner-wrap {
+  position: absolute;
+  left: 0; right: 0; top: 56px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+}
+#phn {
+  font-size: 15px;
+  letter-spacing: .38em;
+  color: var(--ac);
+  font-weight: 600;
+}
+#phs {
+  font-size: 13px;
+  color: var(--t2);
+  margin-top: 4px;
+  letter-spacing: .04em;
+}
+#alr {
+  display: none;
+  margin-top: 10px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  letter-spacing: .03em;
+  transition: opacity .3s;
+}
+#fl, #vd {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+#fl {
+  top: 32%;
+  font-size: 52px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  opacity: 0;
+}
+#vd {
+  top: 36%;
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  opacity: 0;
+}
+
+/* ==================== 右上角轨迹小地图 ==================== */
+#minimap-wrap {
+  position: absolute;
+  top: 56px;
+  right: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  z-index: 15;
+  transition: width .2s ease, height .2s ease;
+}
+body.is-public #minimap-wrap { width: 160px; height: 160px; }
+body.is-engineering #minimap-wrap { width: 200px; height: 200px; }
+#minimap {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==================== 底部仪表盘主容器 ==================== */
+#dash-panel {
+  position: fixed;
+  left: 24px; right: 24px; bottom: 12px;
+  background: rgba(5, 7, 11, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: height .2s ease;
+}
+body.is-public #dash-panel { height: 148px; }
+body.is-engineering #dash-panel { height: 200px; }
+
+/* ==================== 公众版底部仪表盘 ==================== */
+#dash-pub {
+  height: 84px;
+  padding: 8px 24px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.pub-row1 {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.pub-clock {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.pub-stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pub-stat-tile .pub-lbl {
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--t2);
+  text-transform: uppercase;
+}
+.pub-stat-tile .pub-val {
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pub-stat-tile .pub-val small {
+  font-size: 14px;
+  color: var(--t2);
+  margin-left: 4px;
+}
+.pub-health-cap {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 500;
+}
+.pub-health-cap .hdot {
+  font-size: 10px;
+  color: var(--ac);
+}
+.pub-row2 {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #C8D0DA;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#bReplayPub {
+  font-weight: 600;
+  background: rgba(79, 209, 255, 0.15);
+  border-color: var(--ac);
+  color: var(--ac);
+}
+
+/* ==================== 工程版底部仪表盘 ==================== */
+#dash-eng {
+  height: 124px;
+  display: grid;
+  grid-template-columns: 1fr 340px 1fr;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.dash-zone {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  overflow: hidden;
+}
+.dash-zone:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 左区: 一级箭体 */
+.dash-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.eng1-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.eng1-svg-box {
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+.eng1-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 110px;
+}
+.eng1-title {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--t2);
+}
+.eng1-stat {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ac);
+}
+.eng1-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--t2);
+  gap: 8px;
+}
+.eng1-row .val {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* 一级推进剂 */
+.prop1-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 130px;
+  flex-shrink: 0;
+}
+.prop-hdr {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.prop-bar-box {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: visible;
+}
+.prop-bar-fill {
+  height: 100%;
+  background: var(--ac);
+  border-radius: 4px;
+  transition: width .2s ease;
+}
+.prop-tick {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--wn);
+  border-radius: 1px;
+}
+.prop-margin {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--t2);
+}
+
+/* 情境指标小部件 (96px 固定宽度小块) */
+.ctx-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.ctx-mod {
+  width: 96px;
+  height: 100px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  opacity: 1;
+  transition: width .2s ease, opacity .2s ease, margin .2s ease, padding .2s ease;
+  overflow: hidden;
+}
+.ctx-mod.mod-enter {
+  width: 0 !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+}
+.ctx-mod.mod-exit {
+  width: 0 !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+  transition: width .15s ease, opacity .15s ease, margin .15s ease, padding .15s ease;
+}
+.ctx-mod .ctx-title {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--t2);
+  text-transform: uppercase;
+}
+.ctx-mod .ctx-val {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ctx-mod .ctx-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+.ctx-mod .ctx-bar-fill {
+  height: 100%;
+  background: var(--ac);
+  border-radius: 2px;
+}
+.ctx-mod .ctx-tick {
+  position: absolute;
+  top: -2px; bottom: -2px;
+  width: 2px;
+  border-radius: 1px;
+}
+.ctx-mod .ctx-sub {
+  font-size: 10px;
+  color: var(--t2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 中区: 时钟、下一事件、速度、高度 */
+.dash-center {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+  gap: 3px;
+}
+.dc-row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dc-clock {
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.dc-paused-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 176, 32, 0.2);
+  color: var(--wn);
+  border: 1px solid rgba(255, 176, 32, 0.4);
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+.dc-row2-center {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  margin-top: 1px;
+}
+.dc-next {
+  font-size: 12px;
+  color: var(--t2);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eng-health-pill {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  gap: 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--tx);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  transition: all .15s ease;
+}
+.eng-health-pill .hdot {
+  font-size: 8px;
+  color: var(--ac);
+}
+.eng-health-pill:hover {
+  border-color: var(--ac);
+  background: rgba(79, 209, 255, 0.1);
+}
+.dc-row3 {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  margin-top: 2px;
+}
+.dc-val-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.dc-val-group .lb {
+  font-size: 11px;
+}
+.dc-val-group .vnum {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dc-val-group .vnum small {
+  font-size: 13px;
+  color: var(--t2);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+/* 右区: 分离前一级细节，分离后二级发动机 */
+.dash-right {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.r-content-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+  position: relative;
+}
+.r-fade-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  transition: opacity 150ms ease;
+}
+.s2-badge-flash {
+  position: absolute;
+  top: 4px; left: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--ac);
+  background: rgba(79, 209, 255, 0.16);
+  border: 1px solid var(--ac);
+  border-radius: 4px;
+  padding: 2px 6px;
+  animation: s2flash 1.2s ease forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+@keyframes s2flash {
+  0% { opacity: 0; transform: translateY(-4px); }
+  20%, 80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* 一级飞行细节 (s1d): 4 个数字块 */
+.s1d-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  flex: 1;
+}
+.s1d-cell {
+  display: flex;
+  flex-direction: column;
+}
+.s1d-cell .lb { font-size: 10px; }
+.s1d-cell .m { font-size: 16px; font-weight: 600; margin-top: 1px; }
+.s1d-cell .sub { font-size: 10px; color: var(--t2); }
+.s1d-cell.highlight-q .m { color: var(--ac); }
+
+/* 二级发动机与推进剂 (eng2 + prop2) */
+.s2-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+.mvac-svg-box {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+}
+.s2-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+.s2-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s2-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac);
+}
+.s2-chk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--t2);
+}
+.s2-chk-list .done { color: var(--ac); }
+.prop2-card {
+  width: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* ==================== 线性时间轴 (Linear Timeline) ==================== */
+#timeline-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: visible;
+}
+body.is-public #timeline-wrap { height: 64px; }
+body.is-engineering #timeline-wrap { height: 76px; }
+
+.tl-track-area {
+  position: relative;
+  margin: 0 40px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+}
+.tl-rail {
+  position: absolute;
+  left: 0; right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+}
+.tl-seg {
+  position: absolute;
+  top: 3px;
+  height: 4px;
+  border-radius: 2px;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: filter .15s ease;
+}
+.tl-seg:hover {
+  filter: brightness(1.35);
+}
+.tl-maxq-overlay {
+  position: absolute;
+  top: 1px;
+  height: 8px;
+  background: rgba(255, 176, 32, 0.28);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.tl-dot {
+  position: absolute;
+  top: -0.5px;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  pointer-events: none;
+  z-index: 10;
+  will-change: transform;
+}
+.tl-dot-core {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--ac);
+  box-shadow: 0 0 12px 3px rgba(79, 209, 255, 0.85);
+  transition: background .2s, box-shadow .2s;
+}
+.tl-dot.breathing .tl-dot-core {
+  animation: dotBreathe 1.2s ease-in-out infinite;
+}
+@keyframes dotBreathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px 2px rgba(79, 209, 255, 0.8); }
+  50% { transform: scale(1.4); box-shadow: 0 0 18px 5px rgba(79, 209, 255, 1); }
+}
+.tl-dot.aborted .tl-dot-core {
+  background: var(--cr) !important;
+  box-shadow: 0 0 14px 4px rgba(255, 77, 94, 0.9) !important;
+  animation: none !important;
+}
+.tl-node {
+  position: absolute;
+  top: 1px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  z-index: 6;
+  pointer-events: none;
+}
+.tl-node.passed {
+  background: #FFFFFF;
+  border: 1.5px solid #FFFFFF;
+}
+.tl-node.current {
+  background: var(--ac);
+  border: 1.5px solid var(--ac);
+  box-shadow: 0 0 8px var(--ac);
+}
+.tl-node.future {
+  background: #05070B;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+.tl-lbl {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--t2);
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+  transition: color .2s;
+}
+.tl-lbl.active {
+  color: var(--ac);
+  font-weight: 600;
+}
+.tl-lbl.row-0 { top: -30px; }
+.tl-lbl.row-1 { top: -13px; }
+.tl-lbl.tl-minor-narrow { opacity: 0.35; font-size: 9px; }
+.tl-dur {
+  position: absolute;
+  top: 14px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: rgba(138, 148, 163, 0.7);
+  pointer-events: auto;
+  cursor: default;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ==================== 工程抽屉 (Engineering Drawer) ==================== */
+#drw {
+  position: absolute;
+  top: 0; right: 0; bottom: 216px;
+  width: 440px;
+  max-width: 100%;
+  background: rgba(5, 7, 11, 0.96);
+  border-left: 1px solid var(--ln);
+  transform: translateX(102%);
+  transition: transform .2s cubic-bezier(.16, 1, .3, 1);
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 25;
+}
+#drw.open { transform: none; }
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--ln);
+  padding-bottom: 8px;
+}
+.tabs button {
+  flex: 1;
+  height: 30px;
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  color: var(--t2);
+}
+.tabs button.on {
+  border-color: var(--ac);
+  color: var(--ac);
+  background: rgba(79, 209, 255, 0.1);
+}
+.drw-content { font-size: 12px; }
+.lg {
+  font: 11px/1.6 ui-monospace, Menlo, monospace;
+  color: #C8D0DA;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* 布局编辑器 (Layout Editor inside Drawer) */
+.layout-editor-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.le-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.le-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.le-preset-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--tx);
+}
+.le-preset-btn.active {
+  background: rgba(79, 209, 255, 0.2);
+  border-color: var(--ac);
+  color: var(--ac);
+}
+.le-zones-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.le-zone-col {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--ln);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.le-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+}
+.le-slot-row select {
+  background: #0A1018;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--tx);
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 2px 4px;
+  width: 120px;
+}
+.le-lib-list {
+  font-size: 11px;
+  color: var(--t2);
+  line-height: 1.6;
+  border-top: 1px solid var(--ln);
+  padding-top: 8px;
+}
+.le-io-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.le-io-box textarea {
+  width: 100%;
+  height: 50px;
+  background: #0A1018;
+  border: 1px solid var(--ln);
+  border-radius: 4px;
+  color: #C8D0DA;
+  font-family: monospace;
+  font-size: 10px;
+  padding: 4px;
+  resize: none;
+}
+.le-io-acts {
+  display: flex;
+  gap: 6px;
+}
+
+/* 屏幕阅读器专用 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* 响应式媒体查询 */
+@media (max-width: 1279px) and (min-width: 960px) {
+  .eng1-svg-box { width: 72px; height: 72px; }
+  .ctx-mod { width: 84px; }
+  #minimap-wrap { width: 160px !important; height: 160px !important; }
+}
+@media (max-width: 959px) {
+  /* 强制公众版，隐藏切换开关 */
+  .seg-switch { display: none !important; }
+  body.is-engineering #dash-panel { height: 148px !important; }
+  body.is-engineering #dash-eng { display: none !important; }
+  body.is-engineering #dash-pub { display: flex !important; }
+  #minimap-wrap { width: 140px !important; height: 140px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *:before, *:after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+</style>
+</head>
+<body class="is-public">
+<div id="app">
+  <div id="ph3d">3D VIEWPORT · 占位</div>
+  <div id="vg"></div>
+
+  <!-- 顶栏 (Top Bar) -->
+  <div id="bar-top">
+    <div class="top-left">
+      <span class="brand-title">AETHER-9</span>
+      <span class="lb" id="sub">KSC LC-39A · 回收任务</span>
+    </div>
+    <div class="top-actions" id="topActions">
+      <div class="seg-switch" id="verSwitch" role="group" aria-label="版本切换">
+        <button class="seg-opt active" id="bPub" data-ver="public" aria-label="公众版">公众</button>
+        <button class="seg-opt" id="bEng" data-ver="engineering" aria-label="工程版">工程</button>
+      </div>
+      <button class="pill" id="bLang" aria-label="切换语言 (L)">中 / EN</button>
+      <!-- 工程版按钮通过 JS 动态在 topActions 中挂载/卸载 -->
+    </div>
+  </div>
+
+  <!-- 顶部居中提示 -->
+  <div id="banner-wrap">
+    <div id="phn"></div>
+    <div id="phs"></div>
+    <div id="alr"></div>
+  </div>
+  <div id="fl"></div>
+  <div id="vd"></div>
+  <div id="sr-live" aria-live="polite" class="sr-only"></div>
+
+  <!-- 右上角小地图 -->
+  <div id="minimap-wrap">
+    <canvas id="minimap" width="200" height="200"></canvas>
+  </div>
+
+  <!-- 底部仪表盘主面板 -->
+  <div id="dash-panel">
+    <!-- 上半部分: 公众版与工程版容器 -->
+    <div id="dash-top-container"></div>
+
+    <!-- 下半部分: 严格线性时间轴 -->
+    <div id="timeline-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="428" aria-valuenow="0" aria-label="飞行时间轴">
+      <div class="tl-track-area" id="tlTrackArea">
+        <div class="tl-rail"></div>
+        <div class="tl-maxq-overlay" id="tlMaxQ"></div>
+        <!-- 8 段线段 -->
+        <div class="tl-seg" id="tl-seg-0"></div>
+        <div class="tl-seg" id="tl-seg-1"></div>
+        <div class="tl-seg" id="tl-seg-2"></div>
+        <div class="tl-seg" id="tl-seg-3"></div>
+        <div class="tl-seg" id="tl-seg-4"></div>
+        <div class="tl-seg" id="tl-seg-5"></div>
+        <div class="tl-seg" id="tl-seg-6"></div>
+        <div class="tl-seg" id="tl-seg-7"></div>
+        <!-- 9 个节点 -->
+        <div class="tl-node" id="tl-node-0"></div>
+        <div class="tl-node" id="tl-node-1"></div>
+        <div class="tl-node" id="tl-node-2"></div>
+        <div class="tl-node" id="tl-node-3"></div>
+        <div class="tl-node" id="tl-node-4"></div>
+        <div class="tl-node" id="tl-node-5"></div>
+        <div class="tl-node" id="tl-node-6"></div>
+        <div class="tl-node" id="tl-node-7"></div>
+        <div class="tl-node" id="tl-node-8"></div>
+        <!-- 9 个避让文本标签 -->
+        <div class="tl-lbl row-0" id="tl-lbl-0"></div>
+        <div class="tl-lbl row-1" id="tl-lbl-1"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-2"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-3"></div>
+        <div class="tl-lbl row-1" id="tl-lbl-4"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-5"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-6"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-7"></div>
+        <div class="tl-lbl row-0" id="tl-lbl-8"></div>
+        <!-- 线段时长标注 -->
+        <div class="tl-dur" id="tl-dur-0"></div>
+        <div class="tl-dur" id="tl-dur-1"></div>
+        <div class="tl-dur" id="tl-dur-2"></div>
+        <div class="tl-dur" id="tl-dur-3"></div>
+        <div class="tl-dur" id="tl-dur-4"></div>
+        <div class="tl-dur" id="tl-dur-5"></div>
+        <div class="tl-dur" id="tl-dur-6"></div>
+        <div class="tl-dur" id="tl-dur-7"></div>
+        <!-- 恒速青色圆点 (支持呼吸与平移分离) -->
+        <div class="tl-dot" id="tl-dot"><div class="tl-dot-core"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工程抽屉 (仅工程版) -->
+  <div id="drw">
+    <div class="tabs" id="tabs"></div>
+    <div id="db" class="drw-content"></div>
+  </div>
+</div>
+
+<script>
+// ==================== 物理仿真基础参数 ====================
+const P = [0, 6, 70, 150, 156, 190, 330, 395, 420], END = 428;
+const NZ = ['点火', '离塔', 'MAX-Q', 'MECO', '分离', '转向', '再入', '着陆点火', '触地'];
+const NE = ['Ignition', 'Liftoff', 'MAX-Q', 'MECO', 'Stage sep', 'Flip', 'Entry', 'Landing burn', 'Touchdown'];
+const K = [
+  [0, 0, 0, 0, 100], [5, 0, 0, 100, 99.9], [6, 0, 0, 100, 99.8],
+  [70, 12000, 400, 100, 86], [150, 68000, 2300, 100, 30], [156, 69000, 2300, 0, 30],
+  [190, 110000, 2150, 2, 30], [260, 125000, 1500, 0, 30], [330, 75000, 1800, 0, 29.8],
+  [345, 60000, 1700, 60, 26], [362, 40000, 1000, 60, 21], [372, 30000, 700, 0, 21],
+  [395, 3000, 210, 86, 20], [420, 0, 3, 86, 6], [422, 0, 0, 0, 6], [428, 0, 0, 0, 6]
+];
+const PK = [[6, 90], [150, 40], [190, -30], [330, -80], [395, -88], [428, -90]];
+const EA = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+const planSet = x => x < 156 ? EA : x < 330 ? [] : x < 395 ? [0, 1, 5] : x < 422 ? [0] : [];
+const PL = `<svg width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><path d='M4 2l10 6-10 6z' fill='currentColor'/></svg>`;
+const PA = `<svg width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><path d='M3 2h4v12H3zM9 2h4v12H9z' fill='currentColor'/></svg>`;
+
+let t = 0, run = false, spd = 1, lang = 'zh', variant = 'public', dr = false, tab = 0, ab = false, fin = false, lp = -1;
+let hist = [], log = [], cfg = { burn: 3000, stroke: 1.6 }, fl = new Array(9).fill(0), short = false, V = null;
+let lastTickWallTime = performance.now();
+
+const $ = i => document.getElementById(i);
+const L = (z, e) => lang === 'zh' ? z : e;
+const cl = (x, a, b) => Math.max(a, Math.min(b, x));
+
+function lerp(A, x, n) {
+  let i = 0;
+  while (i < A.length - 2 && A[i + 1][0] <= x) i++;
+  const a = A[i], b = A[i + 1], f = cl((x - a[0]) / (b[0] - a[0]), 0, 1);
+  return a.map((v, j) => j ? v + (b[j] - v) * f : x);
+}
+
+// 7.1 Max-Q 节流深度
+function getThrottleDepth(x) {
+  if (x < 64 || x >= 92) return 0;
+  if (x < 70) return (x - 64) / 6 * 30;
+  if (x < 84) return 30;
+  return (92 - x) / 8 * 30;
+}
+
+// 物理核心函数
+function S(x) {
+  const k = lerp(K, x, 0), alt = k[1], v = k[2], th = k[3], pr = k[4];
+  const mass = 30 + 5.2 * pr, I = mass * 169.6;
+  const rho = 1.225 * Math.exp(-alt / 8500);
+  const sos = Math.max(295, 340 - 0.0045 * alt);
+  const M = v / sos;
+  const q = 0.5 * rho * v * v / 1000;
+  const Cd = 0.3 + 0.55 * Math.exp(-Math.pow((M - 1.1) / 0.28, 2)) + (M > 1.4 ? 0.05 : 0);
+  const drag = q * Cd * 10.5;
+  const heat = 1.74e-4 * Math.sqrt(rho / 0.3) * v * v * v / 1000;
+  const depth = getThrottleDepth(x);
+  const th_eff = th * (1 - depth / 100);
+  const k2 = lerp(K, x + 1, 0);
+  const g = 1 + Math.abs(k2[2] - v) / 9.81;
+  const activeEngines = planSet(x).filter(i => !fl[i]).length;
+  const kN = (th_eff / 100) * activeEngines * 845;
+  const nG = (kN + drag) / (mass * 9.81);
+  const pk = lerp(PK, x, 0)[1];
+  const tdv = 3 + Math.max(0, 2600 - cfg.burn) / 70;
+  const pg = 1 + tdv * tdv / (2 * cfg.stroke * 9.81);
+  const w = 0.2 + 6 * Math.exp(-Math.pow((x - 175) / 8, 2));
+  return { alt, v, th, depth, th_eff, pr, mass, I, rho, sos, M, q, Cd, drag, heat, g, nG, kN, pk, tdv, pg, w, activeEngines };
+}
+
+// 启动时按 argmax q(t) 求出 q 峰值时刻并写入 P[2]
+(function initMaxQ() {
+  let maxQ = -1, maxT = 77;
+  for (let st = 60; st <= 90; st += 0.2) {
+    const s_st = S(st);
+    if (s_st.q > maxQ) { maxQ = s_st.q; maxT = st; }
+  }
+  P[2] = Math.round(maxT); // 77 s
+})();
+
+// 7.3 二级发动机脚本 (SIM)
+function getStage2State(x) {
+  const active = x >= 150;
+  const pr2 = Math.max(0, Math.min(100, 100 - (x - 162) / 345 * 100));
+  let statusTextZh = '待命 / STANDBY', statusTextEn = 'STANDBY', thrust = 0, plumeOp = 0;
+  if (x < 150) {
+    statusTextZh = '待命 / STANDBY'; statusTextEn = 'STANDBY';
+  } else if (x < 156) {
+    statusTextZh = '分离序列中'; statusTextEn = 'SEP SEQUENCE'; plumeOp = 0.3;
+  } else if (x < 162) {
+    const rem = Math.max(0, 162 - x).toFixed(1);
+    statusTextZh = `SES-1 倒计时 ${rem}s`; statusTextEn = `SES-1 T-${rem}s`; plumeOp = 0.6;
+  } else {
+    statusTextZh = 'SES-1 燃烧中 · 934 kN'; statusTextEn = 'SES-1 BURNING · 934 kN'; thrust = 934; plumeOp = 1;
+  }
+  return { active, pr2, statusTextZh, statusTextEn, thrust, plumeOp };
+}
+
+const fT = x => {
+  const T = x - 6, s = T < 0 ? 'T− ' : 'T+ ', a = Math.abs(T), m = Math.floor(a / 60), sc = a - m * 60;
+  return s + String(m).padStart(2, '0') + ':' + (sc < 10 ? '0' : '') + sc.toFixed(1);
+};
+const fA = a => a >= 10000 ? (a / 1000).toFixed(1) + ' km' : Math.round(a) + ' m';
+
+function mg(s, x) {
+  const ph = P.filter(p => p <= x).length - 1;
+  const need = x < 395 ? 22 : 2 + 12 * (s.alt / 3000);
+  const nf = planSet(x).filter(i => fl[i]).length;
+  const br = x >= 395 && x < 420 ? s.alt - s.v * s.v / (2 * Math.max(.5, 10 * s.kN / 727)) : null;
+  const pm = (s.pr - need) * 5.2;
+  const ld = Math.min(100, s.q / 42 * 85 + s.nG * 3);
+  const ca = 80 - 12 * nf - 25 * Math.exp(-Math.pow((x - 175) / 20, 2)) - 45 * Math.exp(-Math.pow((x - 350) / 12, 2));
+  const of = x >= 190 ? 3 + 800 * Math.pow(Math.max(0, (420 - x) / 230), 2) : null;
+  const lv = (v, w, c, inv) => inv ? (v < c ? 2 : v < w ? 1 : 0) : (v > c ? 2 : v > w ? 1 : 0);
+  return [
+    { r: br, z: '着陆制动', e: 'Landing brake', v: br == null ? '—' : (br < 0 ? '−' : '+') + Math.abs(Math.round(br)) + ' m', p: br == null ? 0 : cl(br / 12, 0, 100), s: br == null ? 0 : br < 50 ? 2 : br < 150 ? 1 : 0 },
+    { z: '推进剂', e: 'Propellant', v: pm.toFixed(1) + ' t', p: cl(pm / 40 * 100, 0, 100), s: lv(pm, 5, 2, 1) },
+    { z: '控制权限', e: 'Control auth.', v: Math.round(ca) + '%', p: ca, s: lv(ca, 50, 30, 1) },
+    { z: '结构载荷', e: 'Structural load', v: Math.round(ld) + '%', p: ld, s: lv(ld, 70, 90) },
+    { z: '落点偏差', e: 'Impact offset', v: of == null ? '—' : of < 100 ? of.toFixed(1) + ' m' : Math.round(of) + ' m', p: of == null ? 0 : cl(of / 10, 0, 100), s: of == null ? 0 : of > 200 ? 2 : of > 20 ? 1 : 0 }
+  ];
+}
+
+function flash(id, txt, col, ms) {
+  const e = $(id);
+  if (!e) return;
+  e.textContent = txt;
+  e.style.color = col || 'var(--tx)';
+  e.style.opacity = 1;
+  if (ms) setTimeout(() => e.style.opacity = 0, ms);
+}
+function ev(m) {
+  log.unshift(fT(t) + '  ' + m);
+  if (log.length > 60) log.pop();
+}
+
+// 4.1 状态说明表
+const PUB_DESC = [
+  { zh: '点火与推力建立: 发动机点火，火箭正在积蓄推力', en: 'Ignition & thrust buildup: Engines ignited, building launch thrust' },
+  { zh: '爬升: 火箭离开发射台，加速爬升', en: 'Liftoff & ascent: Clearing launch tower, accelerating upwards' },
+  { zh: '加速上升: 通过大气压力最大的时刻，发动机会暂时降低推力', en: 'Max-Q: Passing max aerodynamic pressure, engines throttling down' },
+  { zh: '一级关机: 一级发动机关机', en: 'MECO: Main engine cutoff confirmed' },
+  { zh: '分离后: 一级与二级分开，二级发动机点火', en: 'Stage separation: S1 separated, Stage 2 engine ignited' },
+  { zh: '转向与滑行: 一级翻转，准备返回', en: 'Flip & coast: First stage flipping attitude, coasting to apogee' },
+  { zh: '再入减速: 一级重新进入大气层，发动机点火减速', en: 'Entry burn: Re-entering atmosphere, braking burn underway' },
+  { zh: '着陆: 最后的减速，正在对准着陆点', en: 'Landing burn: Final deceleration, targeting landing zone' },
+  { zh: '判定: 触地，正在判定是否成功', en: 'Touchdown: Contact confirmed, evaluating landing status' }
+];
+
+// 4.4 动态内容调度规则表
+const DASH = [
+  { zone: 'L', mod: 'eng1', win: [0, 428] },
+  { zone: 'L', mod: 'prop1', win: [0, 428] },
+  { zone: 'L', mod: 'g', win: [0, 150] },
+  { zone: 'L', mod: 'g', win: [330, 428] },
+  { zone: 'L', mod: 'thr', win: [64, 92] },
+  { zone: 'L', mod: 'heat', win: [330, 395] },
+  { zone: 'L', mod: 'brk', win: [395, 420] },
+  { zone: 'L', mod: 'verdict', win: [420, 428] },
+  { zone: 'R', mod: 's1d', win: [0, 156] },
+  { zone: 'R', mod: 'eng2', win: [156, 428] },
+  { zone: 'R', mod: 'prop2', win: [156, 428] }
+];
+
+// 布局编辑器预设与默认配置
+const DEFAULT_LAYOUT = {
+  preset: 'default',
+  left: [
+    { slot: 1, mode: 'auto', widget: 'eng1' },
+    { slot: 2, mode: 'auto', widget: 'prop1' },
+    { slot: 3, mode: 'auto', widget: 'g' },
+    { slot: 4, mode: 'auto', widget: 'thr' }
+  ],
+  right: [
+    { slot: 1, mode: 'auto', widget: 's1d' },
+    { slot: 2, mode: 'auto', widget: 'eng2' },
+    { slot: 3, mode: 'auto', widget: 'prop2' },
+    { slot: 4, mode: 'fixed', widget: 'none' }
+  ]
+};
+let userLayout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+
+const WIDGET_OPTIONS = [
+  { val: 'auto', zh: '[自动]', en: '[Auto]' },
+  { val: 'eng1', zh: '发动机矩阵', en: 'Engine Matrix' },
+  { val: 'prop1', zh: '推进剂', en: 'Propellant' },
+  { val: 'g', zh: '过载', en: 'G-Load' },
+  { val: 'thr', zh: '节流深度', en: 'Throttle Depth' },
+  { val: 'heat', zh: '热流', en: 'Heat Flux' },
+  { val: 'brk', zh: '制动余量', en: 'Brake Margin' },
+  { val: 'q', zh: '动压', en: 'Dyn. Pressure Q' },
+  { val: 'mach', zh: '马赫', en: 'Mach Number' },
+  { val: 'cd', zh: '阻力系数 Cd', en: 'Drag Coeff Cd' },
+  { val: 's1d', zh: '飞行细节', en: 'S1 Details' },
+  { val: 'eng2', zh: '二级发动机', en: 'Stage 2 MVac' },
+  { val: 'prop2', zh: '二级推进', en: 'Stage 2 Prop' },
+  { val: 'margin', zh: '任务裕度', en: 'Task Margins' },
+  { val: 'verdict', zh: '判定结果', en: 'Verdict' },
+  { val: 'none', zh: '(空)', en: '(Empty)' }
+];
+
+// ==================== DOM 构建与版本管理 ====================
+let abortTimer = null;
+
+function renderTopActions() {
+  const container = $('topActions');
+  const existingEngGroup = $('eng-top-btns');
+  if (variant === 'engineering') {
+    if (!existingEngGroup) {
+      const g = document.createElement('div');
+      g.id = 'eng-top-btns';
+      g.style.display = 'inline-flex';
+      g.style.gap = '8px';
+      g.innerHTML = `
+        <button class="pill" id="bRst" aria-label="重来 (R)">${L('重来', 'Reset')}</button>
+        <button class="pill" id="bSp" aria-label="倍速 ([ ])">${spd}×</button>
+        <button class="pill" id="bDrw" aria-label="工程抽屉 (D)">${L('D · 工程抽屉', 'D · Engineering')}</button>`;
+      container.appendChild(g);
+      $('bRst').onclick = rst;
+      $('bSp').onclick = cs;
+      $('bDrw').onclick = dw;
+    } else {
+      $('bRst').textContent = L('重来', 'Reset');
+      $('bSp').textContent = spd + '×';
+      $('bDrw').textContent = L('D · 工程抽屉', 'D · Engineering');
+    }
+  } else {
+    if (existingEngGroup) existingEngGroup.remove();
+  }
+}
+
+function buildPublicDash() {
+  return `
+    <div id="dash-pub">
+      <div class="pub-row1">
+        <button class="bt pr go" id="bGoPub" aria-label="开始/暂停">${run ? PA : PL}</button>
+        <div class="pub-clock" id="metPub">${fT(t)}</div>
+        <div class="pub-stat-tile">
+          <span class="pub-lbl">${L('速度', 'SPEED')}</span>
+          <span class="pub-val" id="vsPub">0 <small>km/h</small></span>
+        </div>
+        <div class="pub-stat-tile">
+          <span class="pub-lbl">${L('高度', 'ALTITUDE')}</span>
+          <span class="pub-val" id="vaPub">0 <small>m</small></span>
+        </div>
+        <div class="pub-health-cap" id="pubHealth">
+          <span class="hdot">●</span>
+          <span id="pubHealthTxt">${L('一切正常', 'ALL NOMINAL')}</span>
+        </div>
+        <button class="pill" id="bReplayPub" style="display:none" aria-label="再看一次">${L('再看一次', 'Watch Again')}</button>
+      </div>
+      <div class="pub-row2">
+        <div class="pub-desc" id="pubDesc">${L(PUB_DESC[0].zh, PUB_DESC[0].en)}</div>
+      </div>
+    </div>`;
+}
+
+// 8. 抽出复用函数 (Section 8)
+function buildEngineMatrix(container) {
+  if (!container) return;
+  container.innerHTML = `
+    <svg id="s1-eng-svg" width="92" height="92" viewBox="0 0 120 120" role="group" aria-label="一级发动机矩阵">
+      <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
+      ${EA.map(i => {
+        const a = (22.5 + (i - 1) * 45) * Math.PI / 180;
+        const x = i ? 60 + 40 * Math.sin(a) : 60, y = i ? 60 - 40 * Math.cos(a) : 60;
+        return `<g data-e="${i}" style="cursor:pointer" aria-label="发动机 ${i}">
+          <circle id="c_ec${i}" cx="${x}" cy="${y}" r="12" stroke-width="1.5"/>
+          <path id="c_ex${i}" d="M${x-5} ${y-5}L${x+5} ${y+5}M${x+5} ${y-5}L${x-5} ${y+5}" stroke="#FF4D5E" stroke-width="2" display="none"/>
+        </g>`;
+      }).join('')}
+    </svg>`;
+}
+
+function updEngineMatrix(s, t) {
+  const pl = planSet(t), activeCount = pl.filter(i => !fl[i] && s.th > 0).length;
+  EA.forEach(i => {
+    const p = pl.includes(i), f = fl[i], on = p && !f && s.th > 0;
+    const c = $('c_ec' + i), x = $('c_ex' + i);
+    if (c) {
+      c.setAttribute('fill', f ? 'rgba(255,77,94,.22)' : on ? 'rgba(79,209,255,' + (.35 + .65 * s.th_eff / 100) + ')' : 'transparent');
+      c.setAttribute('stroke', f ? '#FF4D5E' : p ? '#4FD1FF' : 'rgba(255,255,255,.22)');
+    }
+    if (x) x.setAttribute('display', f ? '' : 'none');
+  });
+  const stat = $('e1-stat'), thrust = $('e1-thrust'), throt = $('e1-throt');
+  if (stat) stat.textContent = (pl.length ? activeCount + ' / ' + pl.length : '0 / 0') + ' ' + L('在线', 'ACTIVE');
+  if (thrust) thrust.textContent = Math.round(s.kN) + ' kN';
+  if (throt) throt.textContent = Math.round(s.th_eff) + ' %';
+}
+
+function buildMvacRing(container) {
+  if (!container) return;
+  container.innerHTML = `
+    <svg width="76" height="76" viewBox="0 0 100 100" role="group" aria-label="二级真空梅林发动机">
+      <defs>
+        <radialGradient id="mvacPlume" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#4FD1FF" stop-opacity="0.85"/>
+          <stop offset="60%" stop-color="#16283A" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+      <circle id="c_s2_nozzle" cx="50" cy="50" r="34" fill="none" stroke="rgba(79,209,255,.4)" stroke-width="2"/>
+      <circle id="c_s2_plume" cx="50" cy="50" r="32" fill="url(#mvacPlume)" opacity="0"/>
+      <circle id="c_s2_core" cx="50" cy="50" r="10" fill="transparent" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+    </svg>`;
+}
+
+function buildEngDash() {
+  return `
+    <div id="dash-eng">
+      <!-- 左区 一级箭体 -->
+      <div class="dash-zone dash-left" id="dash-left">
+        <div class="eng1-card" id="mod-eng1">
+          <div class="eng1-svg-box" id="eng1SvgBox">
+            <svg id="s1-eng-svg" width="92" height="92" viewBox="0 0 120 120" role="group">
+              <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
+              ${EA.map(i => {
+                const a = (22.5 + (i - 1) * 45) * Math.PI / 180;
+                const x = i ? 60 + 40 * Math.sin(a) : 60, y = i ? 60 - 40 * Math.cos(a) : 60;
+                return `<g data-e="${i}" style="cursor:pointer" aria-label="发动机 ${i}">
+                  <circle id="c_ec${i}" cx="${x}" cy="${y}" r="12" stroke-width="1.5"/>
+                  <path id="c_ex${i}" d="M${x-5} ${y-5}L${x+5} ${y+5}M${x+5} ${y-5}L${x-5} ${y+5}" stroke="#FF4D5E" stroke-width="2" display="none"/>
+                </g>`;
+              }).join('')}
+            </svg>
+          </div>
+          <div class="eng1-info">
+            <div class="eng1-title" id="e1-title">${L('9台梅林1D海平面版', '9× Merlin 1D 1D-FT')}</div>
+            <div class="eng1-stat" id="e1-stat">9 / 9 ${L('在线', 'ACTIVE')}</div>
+            <div class="eng1-row"><span>${L('总推力', 'Thrust')}</span><span class="val" id="e1-thrust">0 kN</span></div>
+            <div class="eng1-row"><span>${L('节流', 'Throttle')}</span><span class="val" id="e1-throt">0%</span></div>
+          </div>
+        </div>
+
+        <div class="prop1-card" id="mod-prop1">
+          <div class="prop-hdr">
+            <span class="lb" id="p1-title">${L('一级推进', 'S1 PROP')}</span>
+            <span class="m" id="p1-pct">100%</span>
+          </div>
+          <div class="prop-bar-box">
+            <div class="prop-bar-fill" id="p1-fill" style="width:100%"></div>
+            <div class="prop-tick" id="p1-tick" style="left:22%" title="回收预留"></div>
+          </div>
+          <div class="prop-margin" id="p1-margin">${L('余量', 'Margin')} +25.4 t</div>
+        </div>
+
+        <div class="ctx-box" id="ctx-box"></div>
+      </div>
+
+      <!-- 中区 时间、速度、高度、健康状态 -->
+      <div class="dash-zone dash-center" id="dash-center">
+        <div class="dc-row1">
+          <button class="bt pr go" id="bGoEng" aria-label="开始/暂停">${run ? PA : PL}</button>
+          <div class="dc-clock" id="metEng">${fT(t)}</div>
+          <div class="dc-paused-badge" id="pausedBadge" style="display:none">PAUSED</div>
+        </div>
+        <div class="dc-row2-center">
+          <span class="dc-next" id="nxEng">${L('下一事件 ', 'Next ') + L(NZ[1], NE[1]) + ' · 6 s'}</span>
+          <button class="pill eng-health-pill" id="bHealthEng" aria-label="健康状态与最紧裕度" title="${L('点击打开裕度抽屉', 'Click to open Margins tab')}">
+            <span class="hdot">●</span>
+            <span id="engHealthTxt">${L('最紧裕度: —', 'Tightest: —')}</span>
+          </button>
+        </div>
+        <div class="dc-row3">
+          <div class="dc-val-group">
+            <span class="lb">${L('速度', 'SPD')}</span>
+            <span class="vnum" id="vsEng">0 <small>km/h</small></span>
+          </div>
+          <div class="dc-val-group">
+            <span class="lb">${L('高度', 'ALT')}</span>
+            <span class="vnum" id="vaEng">0 <small>m</small></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右区 分离前飞行细节 / 分离后二级发动机 -->
+      <div class="dash-zone dash-right" id="dash-right">
+        <div class="r-content-wrap" id="rContentWrap"></div>
+        <button class="bt ab" id="bAb" title="Hold 1 s" aria-label="飞行中止 (长按1秒)">
+          <i id="abf"></i>
+          <span id="abt">${L('ABORT · 长按', 'ABORT · HOLD')}</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+function initDashboardDOM() {
+  lastMountedMods.clear();
+  lastRightMode = '';
+  const container = $('dash-top-container');
+  if (variant === 'public') {
+    container.innerHTML = buildPublicDash();
+    $('bGoPub').onclick = go;
+    $('bReplayPub').onclick = () => { rst(); go(); };
+  } else {
+    container.innerHTML = buildEngDash();
+    $('bGoEng').onclick = go;
+    initEngineClick();
+    initAbortBtn();
+    const bH = $('bHealthEng');
+    if (bH) bH.onclick = () => { if (!dr) dw(); tab = 3; showTab(); };
+  }
+  renderTopActions();
+}
+
+function initEngineClick() {
+  const svg = $('s1-eng-svg');
+  if (!svg) return;
+  svg.onclick = e => {
+    const g = e.target.closest('[data-e]');
+    if (!g) return;
+    const i = +g.dataset.e;
+    fl[i] ^= 1;
+    ev(L('一级发动机 ', 'S1 Engine ') + i + (fl[i] ? L(' 故障', ' failed') : L(' 恢复', ' restored')));
+    draw();
+  };
+}
+
+function initAbortBtn() {
+  const btn = $('bAb');
+  if (!btn) return;
+  const f = $('abf');
+  const abEnd = () => {
+    if (abortTimer) { clearTimeout(abortTimer); abortTimer = null; }
+    if (f) { f.style.transition = 'width .15s ease'; f.style.width = '0%'; }
+  };
+  const abStart = () => {
+    if (abortTimer || ab || fin) return;
+    if (f) { f.style.transition = 'width 1s linear'; f.style.width = '100%'; }
+    abortTimer = setTimeout(() => { abEnd(); abort(); }, 1000);
+  };
+  ['pointerup', 'pointerleave', 'pointercancel', 'blur', 'keyup'].forEach(n => btn.addEventListener(n, abEnd));
+  btn.addEventListener('pointerdown', abStart);
+  btn.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); abStart(); } });
+}
+
+// ==================== 抽屉与布局编辑器 ====================
+function hs() {
+  return hist.length ? hist.map(h => `<div class="row"><span>${L('点火', 'Burn')} ${h.b} m · ${h.k.toFixed(2)} m</span><span class="m" style="color:${h.bad ? 'var(--cr)' : 'var(--ac)'}">${h.v.toFixed(1)} m/s · ${h.g.toFixed(1)} G</span></div>`).join('') : `<div class="lb">${L('暂无记录', 'No runs yet')}</div>`;
+}
+
+function showTab() {
+  const tabNames = [
+    ['验证', 'Verify'], ['推进', 'Propulsion'], ['调参', 'Tuning'],
+    ['裕度', 'Margins'], ['布局', 'Layout'], ['日志', 'Log']
+  ];
+  $('tabs').innerHTML = tabNames.map((n, i) => `<button class="${i === tab ? 'on' : ''}" data-t="${i}">${L(n[0], n[1])}</button>`).join('');
+  const s = V || S(t);
+  const e = $('db');
+
+  if (tab === 0) {
+    const ok = s.mass > 0 && s.I / s.mass > 169 && s.I / s.mass < 170;
+    e.innerHTML = [
+      [L('质量', 'Mass'), s.mass.toFixed(1) + ' t'],
+      [L('转动惯量', 'Inertia'), Math.round(s.I).toLocaleString() + ' t·m²'],
+      [L('质量/惯量一致', 'Mass–inertia'), ok ? '✓' : '✗'],
+      [L('大气密度', 'Density'), s.rho.toExponential(2) + ' kg/m³'],
+      [L('马赫', 'Mach'), s.M.toFixed(2)],
+      [L('阻力系数 Cd', 'Cd'), s.Cd.toFixed(3) + (Math.abs(s.M - 1.1) < .3 ? ' ▲' : '')],
+      [L('动压', 'Q'), s.q.toFixed(2) + ' kPa'],
+      [L('阻力', 'Drag'), s.drag.toFixed(1) + ' kN'],
+      [L('热流', 'Heat flux'), s.heat.toFixed(1) + ' kW/m²'],
+      [L('过载 nG', 'Load nG'), s.nG.toFixed(2) + ' G'],
+      [L('角速度', 'Rate'), s.w.toFixed(2) + ' °/s']
+    ].map(r => `<div class="row"><span>${r[0]}</span><span class="m">${r[1]}</span></div>`).join('');
+  } else if (tab === 1) {
+    const u = (100 - s.pr) * 5.2, cg = t > 156 ? (t - 156) * .8 : 0;
+    e.innerHTML = [
+      [L('剩余推进剂', 'Remaining'), s.pr.toFixed(2) + '% · ' + (s.pr * 5.2).toFixed(1) + ' t'],
+      [L('主发动机消耗', 'Main engines'), (u - cg / 1000).toFixed(1) + ' t'],
+      [L('姿控冷气消耗', 'Cold gas'), cg.toFixed(0) + ' kg'],
+      [L('当前推力', 'Thrust'), Math.round(s.kN) + ' kN'],
+      [L('缓冲行程限值', 'Stroke'), cfg.stroke.toFixed(2) + ' m'],
+      [L('预测触地过载', 'Pred. G'), s.pg.toFixed(2) + ' G']
+    ].map(r => `<div class="row"><span>${r[0]}</span><span class="m">${r[1]}</span></div>`).join('') +
+    `<p class="lb" style="margin-top:14px;line-height:1.6;text-transform:none;letter-spacing:0">${L('姿控消耗计入同一本推进剂账本。', 'Attitude-control use is booked in the same propellant ledger.')}</p>`;
+  } else if (tab === 2) {
+    e.innerHTML = `
+      <div class="row"><span>${L('着陆点火高度', 'Burn altitude')}</span><span class="m" id="lb1">${cfg.burn} m</span></div>
+      <input type="range" id="s1" min="1800" max="3600" step="100" value="${cfg.burn}">
+      <div class="row" style="margin-top:12px"><span>${L('缓冲行程', 'Stroke')}</span><span class="m" id="lb2">${cfg.stroke.toFixed(2)} m</span></div>
+      <input type="range" id="s2" min="0.3" max="2.6" step="0.05" value="${cfg.stroke}">
+      <p class="lb" style="text-transform:none;letter-spacing:0;line-height:1.6;margin:12px 0">${L('改参数后点“重来”，运行结果会进入下表。', 'Change values, press Reset; each run is listed below.')}</p>
+      <div id="hl">${hs()}</div>`;
+    $('s1').oninput = ev => { cfg.burn = +ev.target.value; $('lb1').textContent = cfg.burn + ' m'; };
+    $('s2').oninput = ev => { cfg.stroke = +ev.target.value; $('lb2').textContent = cfg.stroke.toFixed(2) + ' m'; };
+  } else if (tab === 3) {
+    // 裕度页
+    const margins = mg(s, t);
+    e.innerHTML = margins.map(m => `
+      <div style="margin-bottom:10px">
+        <div class="row" style="border:none;padding:2px 0">
+          <span>${L(m.z, m.e)}</span>
+          <span class="m" style="color:${m.s === 2 ? 'var(--cr)' : m.s === 1 ? 'var(--wn)' : 'var(--ac)'}">${m.v}</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${m.p}%;background:${m.s === 2 ? 'var(--cr)' : m.s === 1 ? 'var(--wn)' : 'var(--ac)'}"></div>
+        </div>
+      </div>`).join('');
+  } else if (tab === 4) {
+    // 布局编辑器页
+    e.innerHTML = `
+      <div class="layout-editor-box">
+        <div class="le-header">
+          <span style="font-weight:600">${L('仪表盘布局编辑器 (工程版)', 'Dashboard Layout Editor (Eng)')}</span>
+          <button class="pill" id="btnResetLayout" style="height:26px;font-size:11px">${L('恢复默认', 'Restore Default')}</button>
+        </div>
+        <div class="le-presets">
+          <span class="lb">${L('预设:', 'Presets:')}</span>
+          <button class="le-preset-btn ${userLayout.preset === 'default' ? 'active' : ''}" data-p="default">${L('默认', 'Default')}</button>
+          <button class="le-preset-btn ${userLayout.preset === 'launch' ? 'active' : ''}" data-p="launch">${L('发射', 'Launch')}</button>
+          <button class="le-preset-btn ${userLayout.preset === 'recovery' ? 'active' : ''}" data-p="recovery">${L('回收', 'Recovery')}</button>
+          <button class="le-preset-btn ${userLayout.preset === 'review' ? 'active' : ''}" data-p="review">${L('审阅', 'Review')}</button>
+        </div>
+        <div class="le-zones-grid">
+          <div class="le-zone-col">
+            <span class="lb" style="color:var(--ac)">${L('左区 (4 格)', 'Left Zone (4 slots)')}</span>
+            ${[0,1,2,3].map(i => {
+              const curMode = userLayout.left[i].mode;
+              const curWidget = userLayout.left[i].widget;
+              const curVal = curMode === 'auto' ? 'auto' : curWidget;
+              return `
+              <div class="le-slot-row">
+                <span>#${i+1}</span>
+                <select data-slot="L" data-idx="${i}">
+                  ${WIDGET_OPTIONS.map(opt => `<option value="${opt.val}" ${curVal === opt.val ? 'selected' : ''}>${L(opt.zh, opt.en)}</option>`).join('')}
+                </select>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="le-zone-col">
+            <span class="lb" style="color:var(--ac)">${L('右区 (4 格)', 'Right Zone (4 slots)')}</span>
+            ${[0,1,2,3].map(i => {
+              const curMode = userLayout.right[i].mode;
+              const curWidget = userLayout.right[i].widget;
+              const curVal = curMode === 'auto' ? 'auto' : curWidget;
+              return `
+              <div class="le-slot-row">
+                <span>#${i+1}</span>
+                <select data-slot="R" data-idx="${i}">
+                  ${WIDGET_OPTIONS.map(opt => `<option value="${opt.val}" ${curVal === opt.val ? 'selected' : ''}>${L(opt.zh, opt.en)}</option>`).join('')}
+                </select>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="le-lib-list">
+          ${L('小部件库: 发动机矩阵 · 推进剂 · 过载 · 节流深度 · 热流 · 制动余量 · 动压 · 马赫 · Cd · 二级发动机 · 二级推进 · 裕度', 'Library: Eng Matrix · Prop · G-Load · Throttle Depth · Heat Flux · Brake Margin · Dyn. Q · Mach · Cd · S2 Eng · S2 Prop · Margins')}
+        </div>
+        <div class="le-io-box">
+          <textarea id="leConfigIo">${JSON.stringify(userLayout)}</textarea>
+          <div class="le-io-acts">
+            <button class="pill" id="btnExportLayout" style="height:26px;font-size:11px">${L('导出配置', 'Export')}</button>
+            <button class="pill" id="btnImportLayout" style="height:26px;font-size:11px">${L('导入配置', 'Import')}</button>
+          </div>
+        </div>
+      </div>`;
+
+    $('btnResetLayout').onclick = () => {
+      applyPreset('default');
+    };
+    e.querySelectorAll('.le-preset-btn').forEach(b => {
+      b.onclick = () => {
+        applyPreset(b.dataset.p);
+      };
+    });
+    e.querySelectorAll('select').forEach(sel => {
+      sel.onchange = () => {
+        const side = sel.dataset.slot === 'L' ? 'left' : 'right';
+        const idx = +sel.dataset.idx;
+        const val = sel.value;
+        userLayout.preset = 'custom';
+        if (val === 'auto') {
+          const defaultWidgets = side === 'left' ? ['eng1', 'prop1', 'g', 'thr'] : ['s1d', 'eng2', 'prop2', 'none'];
+          userLayout[side][idx] = { slot: idx + 1, mode: 'auto', widget: defaultWidgets[idx] };
+        } else {
+          // 禁止重复放置小部件 (除了 none 与 auto)
+          if (val !== 'none') {
+            let duplicateFound = false;
+            ['left', 'right'].forEach(s => {
+              userLayout[s].forEach((item, sIdx) => {
+                if (!(s === side && sIdx === idx)) {
+                  if (item.mode === 'fixed' && item.widget === val) {
+                    item.widget = 'none';
+                    duplicateFound = true;
+                  }
+                }
+              });
+            });
+            if (duplicateFound) {
+              flash('alr', L('已自动清除重复部件', 'Duplicate widget cleared'), 'var(--wn)', 1500);
+            }
+          }
+          userLayout[side][idx] = { slot: idx + 1, mode: 'fixed', widget: val };
+        }
+        saveSettings();
+        showTab();
+        initDashboardDOM();
+        draw();
+      };
+    });
+    $('btnExportLayout').onclick = () => {
+      const txt = JSON.stringify(userLayout);
+      $('leConfigIo').value = txt;
+      flash('alr', L('配置已复制到文本框', 'Config exported to text box'), 'var(--ac)', 1500);
+    };
+    $('btnImportLayout').onclick = () => {
+      try {
+        const imported = JSON.parse($('leConfigIo').value);
+        if (imported && Array.isArray(imported.left) && Array.isArray(imported.right)) {
+          userLayout = imported;
+          saveSettings();
+          showTab();
+          initDashboardDOM();
+          draw();
+          flash('alr', L('布局配置导入成功', 'Layout imported successfully'), 'var(--ac)', 1500);
+        } else {
+          throw new Error('Invalid');
+        }
+      } catch (err) {
+        flash('alr', L('配置格式错误', 'Invalid layout JSON'), 'var(--cr)', 1800);
+      }
+    };
+  } else if (tab === 5) {
+    e.innerHTML = `<div class="lg">${log.length ? log.join('<br>') : L('暂无事件', 'No events')}</div>`;
+  }
+}
+
+function applyPreset(name) {
+  if (name === 'default') {
+    userLayout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+  } else if (name === 'launch') {
+    userLayout = {
+      preset: 'launch',
+      left: [
+        { slot: 1, mode: 'fixed', widget: 'eng1' },
+        { slot: 2, mode: 'fixed', widget: 'prop1' },
+        { slot: 3, mode: 'fixed', widget: 'g' },
+        { slot: 4, mode: 'fixed', widget: 'thr' }
+      ],
+      right: [
+        { slot: 1, mode: 'fixed', widget: 's1d' },
+        { slot: 2, mode: 'fixed', widget: 'q' },
+        { slot: 3, mode: 'fixed', widget: 'mach' },
+        { slot: 4, mode: 'fixed', widget: 'cd' }
+      ]
+    };
+  } else if (name === 'recovery') {
+    userLayout = {
+      preset: 'recovery',
+      left: [
+        { slot: 1, mode: 'fixed', widget: 'eng1' },
+        { slot: 2, mode: 'fixed', widget: 'prop1' },
+        { slot: 3, mode: 'fixed', widget: 'brk' },
+        { slot: 4, mode: 'fixed', widget: 'heat' }
+      ],
+      right: [
+        { slot: 1, mode: 'fixed', widget: 'g' },
+        { slot: 2, mode: 'fixed', widget: 'margin' },
+        { slot: 3, mode: 'fixed', widget: 's1d' },
+        { slot: 4, mode: 'fixed', widget: 'none' }
+      ]
+    };
+  } else if (name === 'review') {
+    userLayout = {
+      preset: 'review',
+      left: [
+        { slot: 1, mode: 'fixed', widget: 'eng1' },
+        { slot: 2, mode: 'fixed', widget: 'prop1' },
+        { slot: 3, mode: 'fixed', widget: 'g' },
+        { slot: 4, mode: 'fixed', widget: 'verdict' }
+      ],
+      right: [
+        { slot: 1, mode: 'fixed', widget: 's1d' },
+        { slot: 2, mode: 'fixed', widget: 'eng2' },
+        { slot: 3, mode: 'fixed', widget: 'prop2' },
+        { slot: 4, mode: 'fixed', widget: 'margin' }
+      ]
+    };
+  }
+  saveSettings();
+  showTab();
+  initDashboardDOM();
+  draw();
+}
+
+function saveLayout() {
+  try {
+    localStorage.setItem('aether.layout', JSON.stringify(userLayout));
+  } catch (e) {}
+}
+function loadLayout() {
+  try {
+    const raw = localStorage.getItem('aether.layout');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.left) && Array.isArray(parsed.right)) userLayout = parsed;
+    }
+  } catch (e) {}
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem('aether.variant', variant);
+    localStorage.setItem('aether.lang', lang);
+    localStorage.setItem('aether.speed', String(spd));
+  } catch (e) {}
+  saveLayout();
+}
+
+function loadSettings() {
+  try {
+    const hash = window.location.hash.toLowerCase();
+    if (hash === '#engineering') variant = 'engineering';
+    else if (hash === '#public') variant = 'public';
+    else {
+      const savedVar = localStorage.getItem('aether.variant');
+      if (savedVar === 'engineering' || savedVar === 'public') variant = savedVar;
+    }
+    const savedLang = localStorage.getItem('aether.lang');
+    if (savedLang === 'zh' || savedLang === 'en') {
+      lang = savedLang;
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    }
+    const savedSpd = +localStorage.getItem('aether.speed');
+    if (sp.includes(savedSpd)) spd = savedSpd;
+  } catch (e) {}
+  loadLayout();
+}
+const saveVariantSettings = saveSettings;
+const loadVariantSettings = loadSettings;
+
+// ==================== 动态仪表盘渲染 ====================
+let lastMountedMods = new Set();
+let lastRightMode = ''; // 's1d' or 's2'
+
+function updateContextModules(s) {
+  const box = $('ctx-box');
+  if (!box) return;
+
+  // 根据当前 t 和 DASH 规则（或布局覆盖）筛选出应显示的情境模块
+  const needed = new Set();
+  DASH.forEach(rule => {
+    if (rule.zone === 'L' && rule.mod !== 'eng1' && rule.mod !== 'prop1') {
+      if (t >= rule.win[0] && t < rule.win[1]) needed.add(rule.mod);
+    }
+  });
+
+  // 如果用户在布局编辑器中指定了 fixed 部件，做合并处理
+  userLayout.left.forEach(slot => {
+    if (slot.mode === 'fixed') {
+      if (['g', 'thr', 'heat', 'brk', 'verdict'].includes(slot.widget)) needed.add(slot.widget);
+    }
+  });
+
+  // 1. 移除已过期的模块
+  lastMountedMods.forEach(modId => {
+    if (!needed.has(modId)) {
+      const el = $(`mod-${modId}`);
+      if (el) {
+        el.classList.add('mod-exit');
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 150);
+      }
+      lastMountedMods.delete(modId);
+    }
+  });
+
+  // 2. 添加新增的模块
+  needed.forEach(modId => {
+    if (!lastMountedMods.has(modId)) {
+      const el = document.createElement('div');
+      el.id = `mod-${modId}`;
+      el.className = 'ctx-mod mod-enter';
+      el.innerHTML = buildModHtml(modId, s);
+      box.appendChild(el);
+      requestAnimationFrame(() => {
+        el.classList.remove('mod-enter');
+      });
+      lastMountedMods.add(modId);
+    }
+  });
+
+  // 3. 更新已有模块数据
+  needed.forEach(modId => {
+    const el = $(`mod-${modId}`);
+    if (el) updModHtml(modId, el, s);
+  });
+}
+
+function buildModHtml(modId, s, isRight) {
+  if (modId === 'g') {
+    const vId = isRight ? 'g-val-r' : 'g-val', bId = isRight ? 'g-bar-r' : 'g-bar';
+    return `
+      <div class="ctx-title">${L('过载', 'G-LOAD')}</div>
+      <div class="ctx-val" id="${vId}">${s.nG.toFixed(1)} G</div>
+      <div class="ctx-bar">
+        <div class="ctx-bar-fill" id="${bId}" style="width:${cl(s.nG/6*100,0,100)}%"></div>
+        <div class="ctx-tick" style="left:75%;background:var(--wn)" title="4.5G"></div>
+        <div class="ctx-tick" style="left:91.7%;background:var(--cr)" title="5.5G"></div>
+      </div>
+      <div class="ctx-sub">0–6 G</div>`;
+  }
+  if (modId === 'thr') {
+    const vId = isRight ? 'thr-val-r' : 'thr-val', bId = isRight ? 'thr-bar-r' : 'thr-bar';
+    return `
+      <div class="ctx-title" style="color:var(--ac)">${L('节流深度', 'THROTTLE')}</div>
+      <div class="ctx-val" id="${vId}" style="color:var(--ac)">−${Math.round(s.depth)}%</div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${(s.depth/30)*100}%;background:var(--ac)"></div></div>
+      <div class="ctx-sub" style="color:var(--ac)">${L('Max-Q 通过中', 'Max-Q Throttling')}</div>`;
+  }
+  if (modId === 'heat') {
+    const vId = isRight ? 'heat-val-r' : 'heat-val';
+    return `
+      <div class="ctx-title">${L('热流', 'HEAT FLUX')}</div>
+      <div class="ctx-val" id="${vId}">${Math.round(s.heat)} <small style="font-size:11px">kW/m²</small></div>
+      <div class="ctx-bar" style="background:linear-gradient(to right, #6b0000, #ff4500, #ffa500, #ffffaa)">
+        <div class="ctx-bar-fill" style="background:transparent"></div>
+      </div>
+      <div class="ctx-sub">${s.heat > 120 ? L('高温注意', 'HIGH HEAT') : L('黑体辐射', 'Radiative')}</div>`;
+  }
+  if (modId === 'brk') {
+    const b0 = mg(s, t)[0];
+    const vId = isRight ? 'brk-val-r' : 'brk-val', bId = isRight ? 'brk-bar-r' : 'brk-bar', sId = isRight ? 'brk-sub-r' : 'brk-sub';
+    return `
+      <div class="ctx-title">${L('制动余量', 'BRAKE MARGIN')}</div>
+      <div class="ctx-val" id="${vId}">${b0.v}</div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${b0.p}%;background:${b0.s === 2 ? 'var(--cr)' : b0.s === 1 ? 'var(--wn)' : 'var(--ac)'}"></div></div>
+      <div class="ctx-sub" id="${sId}">${b0.s === 2 ? L('不足', 'CRITICAL') : b0.s === 1 ? L('偏低', 'LOW') : L('充足', 'NOMINAL')}</div>`;
+  }
+  if (modId === 'verdict') {
+    const bad = s.pg > 4.5 || short;
+    const vId = isRight ? 'vd-val-r' : 'vd-val';
+    return `
+      <div class="ctx-title">${L('判定结果', 'VERDICT')}</div>
+      <div class="ctx-val" id="${vId}" style="color:${bad ? 'var(--cr)' : 'var(--ac)'}">${bad ? L('坠毁', 'LOST') : L('成功', 'LANDED')}</div>
+      <div class="ctx-sub">${s.tdv.toFixed(1)} m/s · ${s.pg.toFixed(1)} G</div>
+      <div class="ctx-sub">${L('缓冲行程', 'Stroke')} ${cfg.stroke.toFixed(2)} m</div>`;
+  }
+  if (modId === 'q') {
+    const vId = isRight ? 'q-val-r' : 'q-val', bId = isRight ? 'q-bar-r' : 'q-bar';
+    return `
+      <div class="ctx-title" style="color:var(--ac)">${L('动压 Q', 'DYN. Q')}</div>
+      <div class="ctx-val" id="${vId}" style="color:var(--ac)">${s.q.toFixed(1)} <small style="font-size:11px">kPa</small></div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${cl(s.q/30*100,0,100)}%;background:var(--ac)"></div></div>
+      <div class="ctx-sub">${L('峰值 26.9 kPa', 'Peak 26.9 kPa')}</div>`;
+  }
+  if (modId === 'mach') {
+    const vId = isRight ? 'mach-val-r' : 'mach-val', bId = isRight ? 'mach-bar-r' : 'mach-bar', sId = isRight ? 'mach-sub-r' : 'mach-sub';
+    return `
+      <div class="ctx-title">${L('马赫数', 'MACH')}</div>
+      <div class="ctx-val" id="${vId}">M ${s.M.toFixed(2)}</div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${cl(s.M/8*100,0,100)}%"></div></div>
+      <div class="ctx-sub" id="${sId}">${s.M > 1 ? L('超声速', 'SUPERSONIC') : L('亚声速', 'SUBSONIC')}</div>`;
+  }
+  if (modId === 'cd') {
+    const isTrans = Math.abs(s.M - 1.1) < .28;
+    const vId = isRight ? 'cd-val-r' : 'cd-val', bId = isRight ? 'cd-bar-r' : 'cd-bar', sId = isRight ? 'cd-sub-r' : 'cd-sub';
+    return `
+      <div class="ctx-title">${L('阻力系数', 'DRAG CD')}</div>
+      <div class="ctx-val" id="${vId}">${s.Cd.toFixed(3)}${isTrans ? ' ▲' : ''}</div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${cl(s.Cd/0.9*100,0,100)}%"></div></div>
+      <div class="ctx-sub" id="${sId}">${isTrans ? L('跨声速峰', 'Transonic Peak') : L('正常气动', 'Nominal')}</div>`;
+  }
+  if (modId === 'margin') {
+    const m0 = mg(s, t)[0];
+    const vId = isRight ? 'mg-val-r' : 'mg-val', bId = isRight ? 'mg-bar-r' : 'mg-bar', sId = isRight ? 'mg-sub-r' : 'mg-sub';
+    return `
+      <div class="ctx-title">${L('最紧裕度', 'TIGHTEST MARGIN')}</div>
+      <div class="ctx-val" id="${vId}" style="font-size:15px">${m0.v}</div>
+      <div class="ctx-bar"><div class="ctx-bar-fill" id="${bId}" style="width:${m0.p}%;background:${m0.s===2?'var(--cr)':m0.s===1?'var(--wn)':'var(--ac)'}"></div></div>
+      <div class="ctx-sub" id="${sId}">${L(m0.z, m0.e)}</div>`;
+  }
+  return '';
+}
+
+function updModHtml(modId, el, s, isRight) {
+  if (modId === 'g') {
+    const vId = isRight ? '#g-val-r' : '#g-val', bId = isRight ? '#g-bar-r' : '#g-bar';
+    const val = el.querySelector(vId), bar = el.querySelector(bId);
+    if (val) {
+      val.textContent = s.nG.toFixed(1) + ' G';
+      val.style.color = s.nG >= 5.5 ? 'var(--cr)' : s.nG >= 4.5 ? 'var(--wn)' : 'var(--tx)';
+    }
+    if (bar) {
+      bar.style.width = cl(s.nG / 6 * 100, 0, 100) + '%';
+      bar.style.background = s.nG >= 5.5 ? 'var(--cr)' : s.nG >= 4.5 ? 'var(--wn)' : 'var(--ac)';
+    }
+  } else if (modId === 'thr') {
+    const vId = isRight ? '#thr-val-r' : '#thr-val', bId = isRight ? '#thr-bar-r' : '#thr-bar';
+    const val = el.querySelector(vId), bar = el.querySelector(bId);
+    if (val) val.textContent = `−${Math.round(s.depth)}%`;
+    if (bar) bar.style.width = `${(s.depth / 30) * 100}%`;
+  } else if (modId === 'heat') {
+    const vId = isRight ? '#heat-val-r' : '#heat-val';
+    const val = el.querySelector(vId);
+    if (val) val.innerHTML = `${Math.round(s.heat)} <small style="font-size:11px">kW/m²</small>`;
+  } else if (modId === 'brk') {
+    const b0 = mg(s, t)[0];
+    const vId = isRight ? '#brk-val-r' : '#brk-val', bId = isRight ? '#brk-bar-r' : '#brk-bar', sId = isRight ? '#brk-sub-r' : '#brk-sub';
+    const val = el.querySelector(vId), bar = el.querySelector(bId), sub = el.querySelector(sId);
+    if (val) {
+      val.textContent = b0.v;
+      val.style.color = b0.s === 2 ? 'var(--cr)' : b0.s === 1 ? 'var(--wn)' : 'var(--tx)';
+    }
+    if (bar) {
+      bar.style.width = b0.p + '%';
+      bar.style.background = b0.s === 2 ? 'var(--cr)' : b0.s === 1 ? 'var(--wn)' : 'var(--ac)';
+    }
+    if (sub) sub.textContent = b0.s === 2 ? L('不足', 'CRITICAL') : b0.s === 1 ? L('偏低', 'LOW') : L('充足', 'NOMINAL');
+  } else if (modId === 'verdict') {
+    const bad = s.pg > 4.5 || short;
+    const vId = isRight ? '#vd-val-r' : '#vd-val';
+    const val = el.querySelector(vId);
+    if (val) {
+      val.textContent = bad ? L('坠毁', 'LOST') : L('成功', 'LANDED');
+      val.style.color = bad ? 'var(--cr)' : 'var(--ac)';
+    }
+  } else if (modId === 'q') {
+    const vId = isRight ? '#q-val-r' : '#q-val', bId = isRight ? '#q-bar-r' : '#q-bar';
+    const val = el.querySelector(vId), bar = el.querySelector(bId);
+    if (val) val.innerHTML = `${s.q.toFixed(1)} <small style="font-size:11px">kPa</small>`;
+    if (bar) bar.style.width = cl(s.q / 30 * 100, 0, 100) + '%';
+  } else if (modId === 'mach') {
+    const vId = isRight ? '#mach-val-r' : '#mach-val', bId = isRight ? '#mach-bar-r' : '#mach-bar', sId = isRight ? '#mach-sub-r' : '#mach-sub';
+    const val = el.querySelector(vId), bar = el.querySelector(bId), sub = el.querySelector(sId);
+    if (val) val.textContent = `M ${s.M.toFixed(2)}`;
+    if (bar) bar.style.width = cl(s.M / 8 * 100, 0, 100) + '%';
+    if (sub) sub.textContent = s.M > 1 ? L('超声速', 'SUPERSONIC') : L('亚声速', 'SUBSONIC');
+  } else if (modId === 'cd') {
+    const isTrans = Math.abs(s.M - 1.1) < .28;
+    const vId = isRight ? '#cd-val-r' : '#cd-val', bId = isRight ? '#cd-bar-r' : '#cd-bar', sId = isRight ? '#cd-sub-r' : '#cd-sub';
+    const val = el.querySelector(vId), bar = el.querySelector(bId), sub = el.querySelector(sId);
+    if (val) val.textContent = s.Cd.toFixed(3) + (isTrans ? ' ▲' : '');
+    if (bar) bar.style.width = cl(s.Cd / 0.9 * 100, 0, 100) + '%';
+    if (sub) sub.textContent = isTrans ? L('跨声速峰', 'Transonic Peak') : L('正常气动', 'Nominal');
+  } else if (modId === 'margin') {
+    const m0 = mg(s, t)[0];
+    const vId = isRight ? '#mg-val-r' : '#mg-val', bId = isRight ? '#mg-bar-r' : '#mg-bar', sId = isRight ? '#mg-sub-r' : '#mg-sub';
+    const val = el.querySelector(vId), bar = el.querySelector(bId), sub = el.querySelector(sId);
+    if (val) val.textContent = m0.v;
+    if (bar) {
+      bar.style.width = m0.p + '%';
+      bar.style.background = m0.s === 2 ? 'var(--cr)' : m0.s === 1 ? 'var(--wn)' : 'var(--ac)';
+    }
+    if (sub) sub.textContent = L(m0.z, m0.e);
+  }
+}
+
+function updateRightZone(s) {
+  const wrap = $('rContentWrap');
+  if (!wrap) return;
+
+  const isDefaultOrAuto = userLayout.preset === 'default' || (userLayout.right[0].mode === 'auto' && userLayout.right[1].mode === 'auto');
+  const mode = isDefaultOrAuto ? (t < 156 ? 's1d' : 's2') : ('custom-' + userLayout.preset + '-' + userLayout.right.map(r => r.widget).join('-'));
+
+  if (mode !== lastRightMode) {
+    if (isDefaultOrAuto) {
+      if (mode === 's1d') {
+        wrap.innerHTML = `
+          <div class="s1d-grid" id="mod-s1d">
+            <div class="s1d-cell"><span class="lb">${L('推力', 'THRUST')}</span><span class="m" id="s1d-thrust">0 kN</span></div>
+            <div class="s1d-cell"><span class="lb">${L('马赫', 'MACH')}</span><span class="m" id="s1d-mach">0.00</span></div>
+            <div class="s1d-cell ${t >= 64 && t < 92 ? 'highlight-q' : ''}" id="s1d-q-box">
+              <span class="lb">${L('动压 Q', 'DYN. Q')}</span>
+              <span class="m" id="s1d-q">0.0 kPa</span>
+              <span class="sub">${L('峰值 26.9', 'Peak 26.9')}</span>
+            </div>
+            <div class="s1d-cell"><span class="lb">${L('阻力系数 Cd', 'DRAG CD')}</span><span class="m" id="s1d-cd">0.300</span></div>
+          </div>`;
+      } else {
+        wrap.innerHTML = `
+          <div class="s2-badge-flash">STAGE 2</div>
+          <div class="s2-group" id="mod-eng2">
+            <div class="mvac-svg-box" id="mvacSvgBox"></div>
+            <div class="s2-info">
+              <div class="s2-title-row">
+                <span class="lb">${L('二级发动机 (MVac)', 'STAGE 2 MVAC')}</span>
+                <span class="sim-badge">SIM</span>
+              </div>
+              <div class="s2-status" id="s2-stat">待命 / STANDBY</div>
+              <div class="s2-chk-list" id="s2-chk">
+                <div id="chk1">○ ${L('MECO 确认 (t=150s)', 'MECO Confirmed')}</div>
+                <div id="chk2">○ ${L('分离指令 (t=152s)', 'Sep Command')}</div>
+                <div id="chk3">○ ${L('分离确认 (t=156s)', 'Stage Sep Confirmed')}</div>
+                <div id="chk4">○ ${L('SES-1 点火 (t=162s)', 'SES-1 Ignition')}</div>
+              </div>
+            </div>
+            <div class="prop2-card" id="mod-prop2">
+              <div class="prop-hdr">
+                <span class="lb">${L('二级推进', 'S2 PROP')}</span>
+                <span class="sim-badge">SIM</span>
+              </div>
+              <div class="prop-bar-box">
+                <div class="prop-bar-fill" id="p2-fill" style="width:100%"></div>
+              </div>
+              <div class="prop-margin" id="p2-pct">100.0%</div>
+            </div>
+          </div>`;
+        buildMvacRing($('mvacSvgBox'));
+      }
+    } else {
+      // 自定义右侧槽位布局
+      let html = '';
+      userLayout.right.forEach(slot => {
+        const w = slot.widget;
+        if (w === 's1d') {
+          html += `
+            <div class="s1d-grid" id="mod-s1d" style="flex:1">
+              <div class="s1d-cell"><span class="lb">${L('推力', 'THRUST')}</span><span class="m" id="s1d-thrust">0 kN</span></div>
+              <div class="s1d-cell"><span class="lb">${L('马赫', 'MACH')}</span><span class="m" id="s1d-mach">0.00</span></div>
+              <div class="s1d-cell" id="s1d-q-box">
+                <span class="lb">${L('动压 Q', 'DYN. Q')}</span>
+                <span class="m" id="s1d-q">0.0 kPa</span>
+                <span class="sub">${L('峰值 26.9', 'Peak 26.9')}</span>
+              </div>
+              <div class="s1d-cell"><span class="lb">${L('阻力系数 Cd', 'DRAG CD')}</span><span class="m" id="s1d-cd">0.300</span></div>
+            </div>`;
+        } else if (w === 'eng2') {
+          html += `
+            <div class="s2-group" id="mod-eng2" style="flex:1">
+              <div class="mvac-svg-box" id="mvacSvgBox"></div>
+              <div class="s2-info">
+                <div class="s2-title-row">
+                  <span class="lb">${L('二级发动机', 'STAGE 2')}</span>
+                  <span class="sim-badge">SIM</span>
+                </div>
+                <div class="s2-status" id="s2-stat" style="font-size:11px">STANDBY</div>
+              </div>
+            </div>`;
+        } else if (w === 'prop2') {
+          html += `
+            <div class="prop2-card" id="mod-prop2" style="width:90px">
+              <div class="prop-hdr">
+                <span class="lb">${L('二级推进', 'S2 PROP')}</span>
+                <span class="sim-badge">SIM</span>
+              </div>
+              <div class="prop-bar-box">
+                <div class="prop-bar-fill" id="p2-fill" style="width:100%"></div>
+              </div>
+              <div class="prop-margin" id="p2-pct">100.0%</div>
+            </div>`;
+        } else if (w !== 'none') {
+          html += `<div class="ctx-mod" id="mod-${w}-r">${buildModHtml(w, s, true)}</div>`;
+        }
+      });
+      wrap.innerHTML = html;
+      if ($('mvacSvgBox')) buildMvacRing($('mvacSvgBox'));
+    }
+    lastRightMode = mode;
+  }
+
+  // 更新当前右侧区域内部数值
+  if ($('mod-s1d')) {
+    const th = $('s1d-thrust'), ma = $('s1d-mach'), qBox = $('s1d-q-box'), qVal = $('s1d-q'), cd = $('s1d-cd');
+    if (th) th.textContent = Math.round(s.kN) + ' kN';
+    if (ma) ma.textContent = s.M.toFixed(2);
+    if (qVal) qVal.textContent = s.q.toFixed(1) + ' kPa';
+    if (qBox) qBox.classList.toggle('highlight-q', t >= 64 && t < 92);
+    if (cd) cd.textContent = s.Cd.toFixed(3) + (Math.abs(s.M - 1.1) < .28 ? ' ▲' : '');
+  }
+  if ($('mod-eng2')) {
+    const s2 = getStage2State(t);
+    const stat = $('s2-stat'), plm = $('c_s2_plume'), core = $('c_s2_core');
+    if (stat) stat.textContent = L(s2.statusTextZh, s2.statusTextEn);
+    if (plm) plm.style.opacity = s2.plumeOp;
+    if (core) core.setAttribute('fill', s2.thrust > 0 ? '#4FD1FF' : 'transparent');
+
+    const c1 = $('chk1'), c2 = $('chk2'), c3 = $('chk3'), c4 = $('chk4');
+    if (c1) { c1.className = t >= 150 ? 'done' : ''; c1.innerHTML = (t >= 150 ? '✓ ' : '○ ') + L('MECO 确认', 'MECO Verified'); }
+    if (c2) { c2.className = t >= 152 ? 'done' : ''; c2.innerHTML = (t >= 152 ? '✓ ' : '○ ') + L('分离指令', 'Sep Command'); }
+    if (c3) { c3.className = t >= 156 ? 'done' : ''; c3.innerHTML = (t >= 156 ? '✓ ' : '○ ') + L('分离确认', 'Stage Sep'); }
+    if (c4) { c4.className = t >= 162 ? 'done' : ''; c4.innerHTML = (t >= 162 ? '✓ ' : '○ ') + L('SES-1 点火 (934 kN)', 'SES-1 (934 kN)'); }
+  }
+  if ($('mod-prop2')) {
+    const s2 = getStage2State(t);
+    const p2Fill = $('p2-fill'), p2Pct = $('p2-pct');
+    if (p2Fill) p2Fill.style.width = s2.pr2.toFixed(1) + '%';
+    if (p2Pct) p2Pct.textContent = s2.pr2.toFixed(1) + '%';
+  }
+  // 更新自定义右侧槽位中的小部件
+  if (!isDefaultOrAuto) {
+    userLayout.right.forEach(slot => {
+      const w = slot.widget;
+      if (!['s1d', 'eng2', 'prop2', 'none'].includes(w)) {
+        const el = $(`mod-${w}-r`);
+        if (el) updModHtml(w, el, s, true);
+      }
+    });
+  }
+}
+
+
+// ==================== 线性时间轴渲染 ====================
+function updateTimeline(tVal) {
+  const trackArea = $('tlTrackArea');
+  if (!trackArea) return;
+  const W = Math.max(300, trackArea.clientWidth);
+  const currentX = (tVal / END) * W;
+
+  // 1. 恒速圆点位置计算与无延迟设置
+  const dot = $('tl-dot');
+  if (dot) {
+    dot.style.transform = `translateX(${currentX}px)`;
+    dot.setAttribute('aria-valuenow', tVal.toFixed(1));
+    dot.classList.toggle('breathing', run && !ab && !fin);
+    dot.classList.toggle('aborted', ab);
+  }
+
+  // 2. 线段线宽比例与颜色填充
+  const ph = P.filter(p => p <= tVal).length - 1;
+  for (let k = 0; k < 8; k++) {
+    const seg = $(`tl-seg-${k}`);
+    if (!seg) continue;
+    const xStart = (P[k] / END) * W;
+    const xEnd = (P[k + 1] / END) * W;
+    const segW = Math.max(2, xEnd - xStart - 2);
+    seg.style.left = `${xStart + 1}px`;
+    seg.style.width = `${segW}px`;
+
+    if (tVal >= P[k + 1]) {
+      seg.style.background = 'rgba(255, 255, 255, 0.90)';
+    } else if (tVal < P[k]) {
+      seg.style.background = 'rgba(255, 255, 255, 0.18)';
+    } else {
+      if (ab) {
+        seg.style.background = 'var(--cr)';
+      } else {
+        const pct = Math.max(0, Math.min(100, (tVal - P[k]) / (P[k + 1] - P[k]) * 100));
+        seg.style.background = `linear-gradient(to right, var(--ac) 0%, var(--ac) ${pct}%, rgba(255,255,255,0.18) ${pct}%)`;
+      }
+    }
+  }
+
+  // 3. Max-Q 琥珀色半透明带 (64–92s)
+  const mq = $('tlMaxQ');
+  if (mq) {
+    const mqS = (64 / END) * W, mqE = (92 / END) * W;
+    mq.style.left = `${mqS}px`;
+    mq.style.width = `${mqE - mqS}px`;
+    mq.setAttribute('title', L('Max-Q 动压峰值窗口: 64s - 92s (峰值 77s)', 'Max-Q Window: 64s - 92s (Peak 77s)'));
+  }
+
+  // 4. 节点与动态避让标签
+  const isNarrow = W < 600;
+  const secondaryNodes = [1, 3, 5, 7];
+  let lastRow = 0;
+  let lastX = -999;
+  for (let k = 0; k < 9; k++) {
+    const node = $(`tl-node-${k}`), lbl = $(`tl-lbl-${k}`);
+    const nodeX = (P[k] / END) * W;
+    const nodeTitle = `${L(NZ[k], NE[k])} (T+${P[k]}s)`;
+    if (node) {
+      node.style.left = `${nodeX}px`;
+      node.className = 'tl-node ' + (k < ph ? 'passed' : k === ph ? 'current' : 'future');
+      node.setAttribute('title', nodeTitle);
+    }
+    if (lbl) {
+      lbl.style.left = `${nodeX}px`;
+      lbl.textContent = L(NZ[k], NE[k]);
+      lbl.setAttribute('title', nodeTitle);
+      lbl.classList.toggle('active', k === ph);
+
+      // 动态避碰：若相邻两个事件在时间轴上物理像素距离 < 48px 或时间跨度 < 6s，自动交替错位 (双行标注)
+      let row = 0;
+      if (k > 0) {
+        const dx = nodeX - lastX;
+        const dt = P[k] - P[k - 1];
+        if (dx < 48 || dt < 6) {
+          row = (lastRow === 0) ? 1 : 0;
+        } else {
+          row = 0;
+        }
+      }
+      lastRow = row;
+      lastX = nodeX;
+      lbl.classList.toggle('row-0', row === 0);
+      lbl.classList.toggle('row-1', row === 1);
+
+      // 当窗口极窄时（< 600px），次要阶段标签文本自动淡化，避免重叠
+      if (isNarrow && secondaryNodes.includes(k) && k !== ph) {
+        lbl.classList.add('tl-minor-narrow');
+      } else {
+        lbl.classList.remove('tl-minor-narrow');
+      }
+    }
+  }
+
+  // 5. 各线段时长标注与悬停提示 (线段宽度 < 44px 时隐藏文字，但悬停仍显示完整信息)
+  for (let k = 0; k < 8; k++) {
+    const seg = $(`tl-seg-${k}`), dur = $(`tl-dur-${k}`);
+    const durSec = P[k + 1] - P[k];
+    const segW = ((P[k + 1] - P[k]) / END) * W;
+    const segTip = k === 2
+      ? L('Max-Q 窗口: 64s - 92s (持续 28s)', 'Max-Q Window: 64s - 92s (dur 28s)')
+      : `${L(NZ[k], NE[k])} → ${L(NZ[k + 1], NE[k + 1])}: ${P[k]}s - ${P[k + 1]}s (${L('持续', 'dur')} ${durSec}s)`;
+    if (seg) seg.setAttribute('title', segTip);
+    if (dur) {
+      dur.textContent = durSec + ' s';
+      dur.style.left = `${((P[k] + P[k + 1]) / (2 * END)) * W}px`;
+      dur.style.display = segW < 44 ? 'none' : 'block';
+      dur.setAttribute('title', segTip);
+    }
+  }
+}
+
+// 轨迹小地图绘制函数
+function drawMinimap(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // 底色与边框
+  ctx.fillStyle = 'rgba(5, 7, 11, 0.85)';
+  ctx.beginPath();
+  ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(w / 2, h / 2, w / 2 - 2, 0, Math.PI * 2);
+  ctx.clip();
+
+  // 地球曲率弧线
+  ctx.strokeStyle = 'rgba(79, 209, 255, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const earthRadius = w * 0.95;
+  ctx.arc(w / 2, h + earthRadius * 0.58, earthRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 125 km 最高顶点标线
+  const apogeeY = h * 0.22;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(w * 0.12, apogeeY);
+  ctx.lineTo(w * 0.88, apogeeY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 理论轨迹线 (t=6 至 428)
+  const startX = w * 0.14, endX = w * 0.86;
+  const groundY = h * 0.82;
+  const trajH = groundY - apogeeY;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let st = 6; st <= END; st += 4) {
+    const s_st = S(st);
+    const px = startX + (endX - startX) * (st - 6) / 422;
+    const py = groundY - (s_st.alt / 125000) * trajH;
+    if (st === 6) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // 当前位置青色圆点
+  const s = S(t);
+  const curPx = startX + (endX - startX) * Math.max(0, t - 6) / 422;
+  const curPy = groundY - (s.alt / 125000) * trajH;
+
+  ctx.fillStyle = 'rgba(79, 209, 255, 0.3)';
+  ctx.beginPath();
+  ctx.arc(curPx, curPy, 7, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4FD1FF';
+  ctx.beginPath();
+  ctx.arc(curPx, curPy, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 标注文字
+  ctx.fillStyle = 'rgba(138, 148, 163, 0.75)';
+  ctx.font = '9px "Space Grotesk", sans-serif';
+  ctx.fillText('125 km', w * 0.14, apogeeY - 4);
+
+  ctx.restore();
+}
+
+// ==================== 仿真循环 Tick 与 Draw ====================
+function tick() {
+  lastTickWallTime = performance.now();
+  if (run && !ab && !fin) {
+    t = Math.min(END, t + .1 * spd);
+    const s = S(t);
+    const b0 = mg(s, t)[0];
+    if (b0.r != null && b0.r < 0) short = true;
+
+    const ph = P.filter(p => p <= t).length - 1;
+    if (ph !== lp) {
+      lp = ph;
+      ev(L(NZ[ph], NE[ph]));
+      if (ph > 0) flash('fl', L(NZ[ph], NE[ph]), 'var(--tx)', 1800);
+      const sr = $('sr-live');
+      if (sr) sr.textContent = `${L(NZ[ph], NE[ph])}: ${L(PUB_DESC[ph].zh, PUB_DESC[ph].en)}`;
+    }
+
+    if (t >= 420 && !fin) {
+      fin = true;
+      run = false;
+      const bad = s.pg > 4.5 || short;
+      hist.unshift({ b: cfg.burn, k: cfg.stroke, v: s.tdv, g: s.pg, bad });
+      ev(bad ? L('判定: 坠毁', 'Verdict: LOST') : L('判定: 着陆成功', 'Verdict: LANDED'));
+      flash('vd', bad ? 'VEHICLE LOST' : 'TOUCHDOWN CONFIRMED', bad ? 'var(--cr)' : 'var(--ac)', 0);
+    }
+  }
+  draw();
+}
+
+function draw() {
+  const s = S(t), ph = P.filter(p => p <= t).length - 1, m = mg(s, t);
+  V = s;
+
+  // 顶部与全局横幅
+  $('sub').textContent = L('KSC LC-39A · 回收任务', 'KSC LC-39A · RECOVERY');
+  $('phn').textContent = ab ? 'ABORT' : L(NE[ph].toUpperCase(), NE[ph].toUpperCase());
+  $('phn').style.color = ab ? 'var(--cr)' : 'var(--ac)';
+  $('phs').textContent = ab ? L('飞行终止', 'Flight terminated') : L(NZ[ph], NE[ph]) + (run ? '' : ' · ' + (fin ? L('已结束', 'ended') : L('待命', 'standby')));
+
+  // 告警条
+  const bad = m.filter(r => r.s > 0);
+  const a = $('alr');
+  if (bad.length && !ab && !fin && a.style.opacity !== '1') {
+    const r = bad[0];
+    a.style.display = 'inline-block';
+    a.textContent = (r.s > 1 ? L('警告 · ', 'Warning · ') : L('注意 · ', 'Caution · ')) + L(r.z, r.e) + ' ' + r.v;
+    const c = r.s > 1 ? '255,77,94' : '255,176,32';
+    a.style.border = '1px solid rgba(' + c + ',.5)';
+    a.style.background = 'rgba(' + c + ',.08)';
+    a.style.color = r.s > 1 ? 'var(--cr)' : 'var(--wn)';
+  } else if (!bad.length && a.style.opacity !== '1') {
+    a.style.display = 'none';
+  }
+
+  // 顶栏按钮更新
+  renderTopActions();
+
+  // 根据当前版本更新视图
+  if (variant === 'public') {
+    const met = $('metPub'), vs = $('vsPub'), va = $('vaPub'), htxt = $('pubHealthTxt'), hdot = $('pubHealth') ? $('pubHealth').querySelector('.hdot') : null;
+    const desc = $('pubDesc'), bGo = $('bGoPub'), bReplay = $('bReplayPub');
+    if (met) met.textContent = fT(t);
+    if (vs) vs.innerHTML = `${Math.round(s.v * 3.6).toLocaleString()} <small>km/h</small>`;
+    if (va) va.innerHTML = `${fA(s.alt)}`;
+    if (desc) desc.textContent = L(PUB_DESC[ph].zh, PUB_DESC[ph].en);
+    if (bGo) bGo.innerHTML = run ? PA : PL;
+    if (bReplay) bReplay.style.display = fin ? 'inline-flex' : 'none';
+
+    if (htxt && hdot) {
+      if (bad.length > 0 && bad[0].s === 2) {
+        htxt.textContent = L('异常', 'WARNING');
+        hdot.style.color = 'var(--cr)';
+      } else if (bad.length > 0) {
+        htxt.textContent = L('注意', 'CAUTION');
+        hdot.style.color = 'var(--wn)';
+      } else {
+        htxt.textContent = L('一切正常', 'ALL NOMINAL');
+        hdot.style.color = 'var(--ac)';
+      }
+    }
+  } else {
+    // 工程版视图更新
+    const met = $('metEng'), nx = $('nxEng'), vs = $('vsEng'), va = $('vaEng'), bGo = $('bGoEng'), pBadge = $('pausedBadge');
+    if (met) met.textContent = fT(t);
+    if (pBadge) pBadge.style.display = (!run && !fin && !ab) ? 'inline-block' : 'none';
+    if (nx) nx.textContent = ph < 8 ? L('下一事件 ', 'Next ') + L(NZ[ph + 1], NE[ph + 1]) + ' · ' + Math.ceil(P[ph + 1] - t) + ' s' : L('任务结束', 'End');
+    if (vs) vs.innerHTML = `${Math.round(s.v * 3.6).toLocaleString()} <small>km/h</small>`;
+    if (va) va.innerHTML = `${fA(s.alt)}`;
+    if (bGo) bGo.innerHTML = run ? PA : PL;
+
+    // 最紧裕度胶囊展示
+    const mList = mg(s, t).filter(m => m.v !== '—');
+    const tightest = mList.sort((a, b) => b.s - a.s || (b.s > 0 ? b.p - a.p : a.p - b.p))[0] || mg(s, t)[1];
+    const bHealthEng = $('bHealthEng'), engHealthTxt = $('engHealthTxt');
+    if (bHealthEng && engHealthTxt && tightest) {
+      engHealthTxt.textContent = `${L('最紧裕度', 'Tightest')}: ${L(tightest.z, tightest.e)} ${tightest.v}`;
+      const hdot = bHealthEng.querySelector('.hdot');
+      const dotColor = tightest.s === 2 ? 'var(--cr)' : tightest.s === 1 ? 'var(--wn)' : 'var(--ac)';
+      if (hdot) hdot.style.color = dotColor;
+      bHealthEng.style.borderColor = tightest.s === 2 ? 'var(--cr)' : tightest.s === 1 ? 'var(--wn)' : 'rgba(255,255,255,0.18)';
+    }
+
+    // 一级发动机矩阵
+    const pl = planSet(t), activeCount = pl.filter(i => !fl[i] && s.th > 0).length;
+    EA.forEach(i => {
+      const p = pl.includes(i), f = fl[i], on = p && !f && s.th > 0;
+      const c = $('c_ec' + i), x = $('c_ex' + i);
+      if (c) {
+        c.setAttribute('fill', f ? 'rgba(255,77,94,.22)' : on ? 'rgba(79,209,255,' + (.35 + .65 * s.th_eff / 100) + ')' : 'transparent');
+        c.setAttribute('stroke', f ? '#FF4D5E' : p ? '#4FD1FF' : 'rgba(255,255,255,.22)');
+      }
+      if (x) x.setAttribute('display', f ? '' : 'none');
+    });
+    const stat = $('e1-stat'), thrust = $('e1-thrust'), throt = $('e1-throt');
+    if (stat) stat.textContent = (pl.length ? activeCount + ' / ' + pl.length : '0 / 0') + ' ' + L('在线', 'ACTIVE');
+    if (thrust) thrust.textContent = Math.round(s.kN) + ' kN';
+    if (throt) throt.textContent = Math.round(s.th_eff) + ' %';
+
+    // 一级推进剂
+    const p1Fill = $('p1-fill'), p1Pct = $('p1-pct'), p1Tick = $('p1-tick'), p1Margin = $('p1-margin');
+    if (p1Fill) p1Fill.style.width = s.pr.toFixed(1) + '%';
+    if (p1Pct) p1Pct.textContent = s.pr.toFixed(1) + '%';
+    const need = t < 395 ? 22 : 2 + 12 * (s.alt / 3000);
+    if (p1Tick) p1Tick.style.left = need + '%';
+    if (p1Margin) {
+      const marginT = (s.pr - need) * 5.2;
+      p1Margin.textContent = `${L('余量', 'Margin')} ${(marginT >= 0 ? '+' : '')}${marginT.toFixed(1)} t`;
+      p1Margin.style.color = marginT < 0 ? 'var(--cr)' : marginT < 5 ? 'var(--wn)' : 'var(--t2)';
+    }
+
+    // 更新情境指标与右侧区域
+    updateContextModules(s);
+    updateRightZone(s);
+
+    // ABORT 按钮状态
+    const bAb = $('bAb');
+    if (bAb) bAb.disabled = ab || fin;
+  }
+
+  // 小地图与时间轴重绘
+  drawMinimap($('minimap'));
+  updateTimeline(t);
+
+  // 若抽屉开启，刷新抽屉内容
+  if (dr) showTab();
+}
+
+// 6.4 requestAnimationFrame 插值动画循环
+function animLoop(now) {
+  requestAnimationFrame(animLoop);
+  if (run && !ab && !fin) {
+    const elapsed = (now - lastTickWallTime) / 1000;
+    const t_render = Math.min(END, Math.min(t + 0.1 * spd, t + elapsed * spd));
+    updateTimeline(t_render);
+  }
+}
+requestAnimationFrame(animLoop);
+
+// ==================== 用户控制与交互 ====================
+function go() {
+  if (fin || ab) return;
+  run = !run;
+  if (run && t === 0) ev(L('倒计时开始', 'Sequence start'));
+  $('vd').style.opacity = 0;
+  draw();
+}
+
+function rst() {
+  t = 0; run = false; ab = false; fin = false; lp = -1; log = []; short = false; fl.fill(0);
+  lastRightMode = '';
+  lastMountedMods.clear();
+  $('vd').style.opacity = 0;
+  $('fl').style.opacity = 0;
+  initDashboardDOM();
+  draw();
+}
+
+function abort() {
+  if (ab || fin) return;
+  ab = true; run = false; ev('ABORT');
+  flash('vd', 'FLIGHT TERMINATED', 'var(--cr)', 0);
+  const sr = $('sr-live');
+  if (sr) sr.textContent = 'ABORT: FLIGHT TERMINATED';
+  draw();
+}
+
+const sp = [1, 2, 5, 10];
+const cs = () => { spd = sp[(sp.indexOf(spd) + 1) % 4]; draw(); saveVariantSettings(); };
+const dw = () => { dr = !dr; $('drw').classList.toggle('open', dr); if (dr) showTab(); };
+
+function setVariant(newVar) {
+  variant = newVar;
+  document.body.className = variant === 'public' ? 'is-public' : 'is-engineering';
+  $('bPub').classList.toggle('active', variant === 'public');
+  $('bEng').classList.toggle('active', variant === 'engineering');
+  if (variant === 'public' && dr) {
+    dr = false;
+    $('drw').classList.remove('open');
+  }
+  window.location.hash = '#' + variant;
+  saveVariantSettings();
+  initDashboardDOM();
+  draw();
+}
+
+function toggleVariant() {
+  setVariant(variant === 'public' ? 'engineering' : 'public');
+}
+
+function toggleLanguage() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  saveVariantSettings();
+  initDashboardDOM();
+  draw();
+  if (dr) showTab();
+}
+
+
+// 键盘与全局事件监听
+$('bPub').onclick = () => setVariant('public');
+$('bEng').onclick = () => setVariant('engineering');
+$('bLang').onclick = toggleLanguage;
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t !== undefined) { tab = +b.dataset.t; showTab(); } };
+
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.toLowerCase();
+  if (hash === '#engineering' && variant !== 'engineering') setVariant('engineering');
+  else if (hash === '#public' && variant !== 'public') setVariant('public');
+});
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.id === 'bAb') return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); go(); }
+  else if (k === 'r') {
+    if (variant === 'engineering') rst();
+  }
+  else if (k === 'v') toggleVariant();
+  else if (k === 'l') toggleLanguage();
+  else if (k === 'd') {
+    if (variant === 'engineering') dw();
+  }
+  else if (k === ']' || k === '[') {
+    if (variant === 'engineering') cs();
+  }
+  else if (e.key === 'Escape') {
+    if (dr) { dr = false; $('drw').classList.remove('open'); }
+  }
+});
+
+// 初始化启动
+loadVariantSettings();
+loadLayout();
+document.body.className = variant === 'public' ? 'is-public' : 'is-engineering';
+$('bPub').classList.toggle('active', variant === 'public');
+$('bEng').classList.toggle('active', variant === 'engineering');
+initDashboardDOM();
+draw();
+setInterval(tick, 100);
+</script>
+</body>
+</html>

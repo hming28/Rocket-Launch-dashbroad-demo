@@ -1,0 +1,2017 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AETHER-9 飞行控制台</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070B;--tx:#F4F7FA;--t2:#8A94A3;--ac:#4FD1FF;--wn:#FFB020;--cr:#FF4D5E;--ln:rgba(255,255,255,.09);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font-family:'Space Grotesk','Inter','PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;overflow:hidden}
+#app{position:fixed;inset:0;background:linear-gradient(180deg,#05070B 0%,#0A1522 48%,#16283A 74%,#0B0F15 74.1%,#07090D 100%)}
+#ph3d{position:absolute;left:0;right:0;top:44%;text-align:center;font-size:12px;letter-spacing:.3em;color:rgba(138,148,163,.55);pointer-events:none}
+#vg{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,11,.75),rgba(5,7,11,0) 150px);pointer-events:none}
+.lb{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t2);font-weight:500}
+.m{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.xl{font-size:36px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}.xl small{font-size:14px;font-weight:400;color:var(--t2);margin-left:6px}
+.tk{font-size:22px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}.m2{font-size:20px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+button{font-family:inherit;color:var(--tx);cursor:pointer}
+.pill{font-size:12px;font-weight:500;background:rgba(5,7,11,.6);border:1px solid rgba(255,255,255,.14);border-radius:8px;height:32px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.pill:hover{border-color:rgba(255,255,255,.4)}
+.pill.auto-pill{display:inline-flex;gap:6px;font-weight:600;letter-spacing:.05em}
+.auto-pill .adot{font-size:9px;color:var(--ac);transition:color .2s}
+.auto-pill.hold .adot{color:var(--wn)}
+.bt{height:44px;min-width:44px;padding:0 14px;font-size:13px;font-weight:500;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:10px}
+.bt.pr{background:var(--ac);color:#05202B;border-color:var(--ac);font-weight:600}
+.bt.go{display:inline-flex;align-items:center;justify-content:center;border-radius:22px}
+.bt.ab{position:relative;overflow:hidden;border-color:rgba(255,77,94,.6);color:var(--cr)}.bt.ab i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,77,94,.35)}.bt.ab span{position:relative}
+button:hover{border-color:rgba(255,255,255,.4)}button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.tr{height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:6px}.tr i{display:block;height:3px;border-radius:2px}
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:10px}
+.row span:first-child{font-size:12px;color:var(--t2)}
+#tl{position:absolute;left:0;right:0;bottom:0;height:58px;z-index:6}
+#tl .ln{position:absolute;left:5.55%;right:5.55%;top:26px;height:1px;background:rgba(255,255,255,.2)}
+#tl .pg{position:absolute;left:5.55%;top:25px;height:3px;border-radius:2px;background:linear-gradient(90deg,rgba(244,247,250,.3),var(--tx) 75%,var(--ac));box-shadow:0 0 10px rgba(79,209,255,.5);transition:width .1s linear}
+#tl .hdp{position:absolute;top:21px;left:5.55%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:var(--ac);box-shadow:0 0 14px 4px rgba(79,209,255,.7);transition:left .1s linear;z-index:2}
+#tl.run .hdp{animation:pls 1.2s ease-in-out infinite}
+@keyframes pls{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+@keyframes rp{0%{box-shadow:0 0 0 0 rgba(79,209,255,.65)}100%{box-shadow:0 0 0 14px rgba(79,209,255,0)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(2)}100%{transform:scale(1)}}
+#tl:not(.run) *{animation-play-state:paused}
+#tl .hlb{position:absolute;top:0;left:5.55%;transform:translateX(-50%);font-size:12px;font-weight:500;line-height:16px;color:var(--ac);white-space:nowrap;transition:left .1s linear;pointer-events:none}
+.nd span{position:absolute;top:14px;height:16px;display:flex;align-items:center;white-space:nowrap;opacity:0;transition:opacity .25s,color .3s}.nd.nx span{opacity:1}#tl:hover .nd span{opacity:1}.nd b{box-sizing:border-box;transition:background .3s,border-color .3s}.nd.d b{width:5px;height:5px;margin-top:2px}
+#tl .nds{position:absolute;left:0;right:0;top:22px;display:flex}
+.nd{flex:1;position:relative;display:flex;justify-content:center;font-size:11px;color:var(--t2)}
+.nd b{width:9px;height:9px;border-radius:50%;background:var(--tx)}.nd.f b{background:transparent;border:1px solid var(--t2)}
+.nd.c b{background:var(--ac);animation:rp 1.6s ease-out infinite}.nd.c{color:var(--ac)}.nd.pop b{animation:pop .6s ease-out}
+#bar{position:absolute;left:0;right:0;bottom:58px;height:72px;background:rgba(5,7,11,.88);border-top:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;padding:0 32px;gap:16px;z-index:6}
+#drw{position:absolute;top:0;right:0;bottom:130px;width:420px;max-width:100%;background:rgba(5,7,11,.96);border-left:1px solid var(--ln);transform:translateX(102%);transition:transform .18s cubic-bezier(.16,1,.3,1);padding:16px;overflow:auto;z-index:20}
+#drw.o{transform:none}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1;height:34px;font-size:12px;background:none;border:1px solid var(--ln);border-radius:8px}.tabs .on{border-color:var(--ac);color:var(--ac)}
+#fl,#vd{position:absolute;left:0;right:0;text-align:center;pointer-events:none;transition:opacity .3s}
+#fl{top:34%;font-size:56px;font-weight:500;letter-spacing:.2em;opacity:0}#vd{top:38%;font-size:48px;font-weight:600;letter-spacing:.12em;opacity:0}
+input[type=range]{width:100%;accent-color:#4FD1FF}
+.lg{font:12px/1.7 ui-monospace,Menlo,monospace;color:#C8D0DA}
+
+/* ==================== 方案 B: 书签条 (Bookmark Strips) ==================== */
+.bm-strip{position:absolute;top:68px;bottom:140px;width:34px;display:flex;flex-direction:column;gap:5px;z-index:12;user-select:none}
+#bm-left{left:4px}
+#bm-right{right:4px}
+.bm-item{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px;background:rgba(10,16,25,.75);border:1px solid rgba(255,255,255,.09);border-radius:6px;cursor:pointer;transition:all .18s cubic-bezier(.16,1,.3,1);color:var(--t2)}
+.bm-item:hover{background:rgba(18,29,45,.95);border-color:rgba(79,209,255,.45);color:var(--tx);transform:scale(1.05);z-index:15}
+.bm-item.active{background:rgba(79,209,255,.14);border-color:var(--ac);color:var(--tx);font-weight:600;box-shadow:0 0 10px rgba(79,209,255,.22)}
+.bm-badge{font-size:10px;line-height:1;font-weight:700;color:var(--ac);margin-bottom:2px;font-variant-numeric:tabular-nums}
+.bm-text{font-size:11px;letter-spacing:.06em;writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap}
+html[lang="en"] .bm-text{writing-mode:horizontal-tb;transform:rotate(-90deg);margin:8px 0;font-size:10px;letter-spacing:.08em}
+.bm-alert{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--wn);display:none}
+.bm-alert.crit{background:var(--cr);animation:bmalert 1s infinite}
+@keyframes bmalert{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.8);opacity:.6}}
+.bm-hover-pop{position:absolute;top:50%;transform:translateY(-50%);background:rgba(5,10,18,.96);border:1px solid rgba(79,209,255,.38);border-radius:6px;padding:6px 12px;white-space:nowrap;font-size:12px;color:var(--tx);pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;z-index:100;box-shadow:0 4px 18px rgba(0,0,0,.7)}
+#bm-left .bm-hover-pop{left:40px;transform:translateY(-50%) translateX(-6px)}
+#bm-left .bm-item:hover .bm-hover-pop{opacity:1;transform:translateY(-50%) translateX(0)}
+#bm-right .bm-hover-pop{right:40px;transform:translateY(-50%) translateX(6px)}
+#bm-right .bm-item:hover .bm-hover-pop{opacity:1;transform:translateY(-50%) translateX(0)}
+
+/* ==================== 双侧卡片槽位容器 ==================== */
+.slots-col{position:absolute;top:68px;bottom:140px;width:300px;display:flex;flex-direction:column;gap:12px;z-index:5}
+#slots-left{left:42px}
+#slots-right{right:42px}
+.slot-box{flex:1;min-height:0;background:rgba(5,7,11,.78);border:1px solid var(--ln);border-radius:10px;backdrop-filter:blur(8px);display:flex;flex-direction:column;overflow:hidden;position:relative;transition:border-color .25s,box-shadow .25s,flex .25s}
+.slot-box.slot-flash{border-color:var(--ac);box-shadow:0 0 16px rgba(79,209,255,.45)}
+.slot-box.slot-target-select{border-color:var(--ac);animation:targetPulse 1s infinite alternate}
+@keyframes targetPulse{from{box-shadow:0 0 4px rgba(79,209,255,.3)}to{box-shadow:0 0 16px rgba(79,209,255,.8)}}
+.slot-box.expanded{flex:10}
+.slot-box.collapsed{display:none}
+.slot-hdr{height:34px;padding:0 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);flex-shrink:0;cursor:grab;user-select:none}
+.slot-hdr:active{cursor:grabbing}
+.slot-box.dragging{opacity:.45}
+.slot-box.drag-over{border-color:var(--ac)!important;box-shadow:0 0 18px rgba(79,209,255,.6)!important}
+.bm-item.dragging{opacity:.45}
+.slot-tw{display:flex;align-items:center;gap:8px}
+.slot-idx{font-size:11px;font-weight:700;color:var(--ac);letter-spacing:.08em}
+.slot-title{font-size:12px;font-weight:500;color:var(--tx);letter-spacing:.04em}
+.slot-sim-tag{font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,176,32,.2);color:var(--wn);border:1px solid rgba(255,176,32,.4);font-weight:600;display:none}
+.slot-acts{display:flex;align-items:center;gap:4px}
+.slot-btn{width:24px;height:24px;padding:0;border-radius:4px;background:transparent;border:1px solid transparent;font-size:11px;display:inline-flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
+.slot-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:var(--tx)}
+.slot-btn.pinned{color:var(--ac);border-color:rgba(79,209,255,.4);background:rgba(79,209,255,.15)}
+.slot-btn.active-select{color:var(--wn);border-color:rgba(255,176,32,.4);background:rgba(255,176,32,.15)}
+.slot-body{flex:1;padding:10px 14px;overflow-y:auto;overflow-x:hidden;position:relative}
+.slot-body::-webkit-scrollbar{width:4px}
+.slot-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:2px}
+
+/* 卡片换入换出动画 */
+.card-anim-out{opacity:0!important;transform:translateY(6px)!important;transition:opacity 120ms cubic-bezier(.4,0,1,1),transform 120ms cubic-bezier(.4,0,1,1)!important}
+.card-anim-in{animation:cIn 180ms cubic-bezier(0,0,.2,1) forwards}
+@keyframes cIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+/* 自动调度 10s 预告通知条 */
+.slot-prev-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(10,24,38,.96);border-top:1px solid var(--ac);padding:5px 12px;font-size:11px;display:flex;justify-content:space-between;align-items:center;z-index:6;animation:prevSlide .2s ease}
+@keyframes prevSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sp-txt{color:var(--ac);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:8px}
+.sp-btn{font-size:11px;padding:2px 8px;height:22px;border-radius:4px;background:rgba(79,209,255,.2);border:1px solid var(--ac);color:var(--tx);cursor:pointer;white-space:nowrap}
+.sp-btn:hover{background:var(--ac);color:#05202B}
+
+/* 卡片快速选择菜单 (点击 ↻ 时在槽位内弹出) */
+.slot-picker-menu{position:absolute;top:34px;left:0;right:0;bottom:0;background:rgba(8,12,20,.97);border-top:1px solid rgba(79,209,255,.3);padding:10px;overflow-y:auto;z-index:20;display:flex;flex-direction:column;gap:6px;animation:spmFade .15s ease}
+@keyframes spmFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.spm-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:600}
+.spm-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s}
+.spm-item:hover{background:rgba(79,209,255,.15);border-color:var(--ac);color:var(--tx)}
+.spm-item.in-use{opacity:.6}
+.spm-item.current{border-color:var(--ac);background:rgba(79,209,255,.1);color:var(--ac);font-weight:600}
+
+/* 窄屏切换器 */
+.mob-switcher{display:none;position:absolute;top:84px;left:50%;transform:translateX(-50%);background:rgba(10,16,25,.88);border:1px solid var(--ln);border-radius:8px;padding:3px;z-index:15;gap:4px}
+.mob-tab{padding:4px 12px;font-size:11px;border-radius:6px;background:transparent;border:none;color:var(--t2);cursor:pointer}
+.mob-tab.active{background:rgba(79,209,255,.2);color:var(--ac);font-weight:600}
+
+/* 响应式适配 */
+@media(max-width:1150px) and (min-width:881px){
+  .slots-col{width:250px}
+  #slots-left{left:36px}
+  #slots-right{right:36px}
+  .bm-strip{width:30px}
+  .bm-text{font-size:10px}
+  #bar{padding:0 16px;gap:12px}
+  #bar .xl{font-size:26px}
+  .hd{display:none}
+}
+@media(max-width:880px){
+  .mob-switcher{display:flex}
+  #banner-wrap{top:50px!important}
+  #phn{font-size:13px!important;letter-spacing:.25em!important}
+  #phs{font-size:11px!important;margin-top:2px!important}
+  #alr{margin-top:4px!important;padding:3px 10px!important;font-size:11px!important}
+  .slots-col{width:calc(100% - 46px);top:124px;bottom:135px}
+  .bm-strip{top:124px;bottom:135px;width:30px}
+  #bm-left{left:4px;right:auto}
+  #slots-left{left:38px;right:auto}
+  body.mob-show-right #bm-right{display:flex;left:4px;right:auto}
+  body.mob-show-right #slots-right{display:flex;left:38px;right:auto}
+  body.mob-show-right #slots-left, body.mob-show-right #bm-left{display:none}
+  body:not(.mob-show-right) #slots-right, body:not(.mob-show-right) #bm-right{display:none}
+  #bar{padding:0 12px;gap:8px}
+  #bar .xl{font-size:22px}
+  #bar .xl small{font-size:11px;margin-left:2px}
+  .hd{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  #drw,#fl,#vd{transition:none}
+  #tl *{animation:none!important;transition:none!important}
+  .card-anim-in,.card-anim-out{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="ph3d">3D VIEWPORT · 占位 / PLACEHOLDER</div>
+<div id="vg"></div>
+
+<!-- 顶栏 -->
+<div style="position:absolute;left:32px;right:32px;top:16px;height:32px;display:flex;justify-content:space-between;align-items:center;z-index:10">
+  <div style="display:flex;gap:14px;align-items:baseline">
+    <span style="font-size:18px;font-weight:600;letter-spacing:.16em">AETHER-9</span>
+    <span class="lb hd" id="sub"></span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="pill auto-pill" id="bAuto" title="切换自动调度 / 手动保持 (A)"><span class="adot">●</span><span id="autoTxt">AUTO</span></button>
+    <button class="pill" id="bAlrPop" title="临界告警自动换入卡片开关"><span class="adot" id="alrPopDot" style="color:var(--ac)">●</span><span id="alrPopTxt">告警: 开</span></button>
+    <button class="pill" id="bRst"></button>
+    <button class="pill" id="bSp">1×</button>
+    <button class="pill" id="bLang">中 / EN</button>
+    <button class="pill" id="bDrw"></button>
+  </div>
+</div>
+
+<!-- 阶段与事件横幅提示 -->
+<div id="banner-wrap" style="position:absolute;left:0;right:0;top:84px;text-align:center;pointer-events:none;z-index:8">
+  <div id="phn" style="font-size:15px;letter-spacing:.4em;color:var(--ac);font-weight:500"></div>
+  <div id="phs" style="font-size:13px;color:var(--t2);margin-top:6px"></div>
+  <div id="alr" style="display:none;margin-top:14px;padding:6px 14px;border-radius:8px;font-size:12px;display:inline-block"></div>
+</div>
+<div id="fl"></div>
+<div id="vd"></div>
+
+<!-- 移动/窄屏双侧切换器 (<= 880px) -->
+<div id="mob-switcher" class="mob-switcher">
+  <button id="mob-btn-l" class="mob-tab active">◨ 左侧系统 (L1/L2)</button>
+  <button id="mob-btn-r" class="mob-tab">◧ 右侧监控 (R1/R2)</button>
+</div>
+
+<!-- 方案 B: 左侧书签条 -->
+<div id="bm-left" class="bm-strip"></div>
+
+<!-- 左侧两个槽位 (L1, L2) -->
+<div id="slots-left" class="slots-col">
+  <div class="slot-box" id="slot-l1" data-slot="l1">
+    <div class="slot-hdr">
+      <div class="slot-tw">
+        <span class="slot-idx">L1</span>
+        <span class="slot-title"></span>
+        <span class="slot-sim-tag">SIM</span>
+      </div>
+      <div class="slot-acts">
+        <button class="slot-btn btn-pin" title="钉住槽位 (P)">📌</button>
+        <button class="slot-btn btn-move" title="移到另一侧 (⇄)">⇄</button>
+        <button class="slot-btn btn-swap" title="更换卡片 (Swap)">↻</button>
+        <button class="slot-btn btn-exp" title="展开槽位 (Expand)">⤢</button>
+      </div>
+    </div>
+    <div class="slot-body"></div>
+    <div class="slot-prev-bar" style="display:none"><span class="sp-txt"></span><button class="sp-btn">保持</button></div>
+  </div>
+  <div class="slot-box" id="slot-l2" data-slot="l2">
+    <div class="slot-hdr">
+      <div class="slot-tw">
+        <span class="slot-idx">L2</span>
+        <span class="slot-title"></span>
+        <span class="slot-sim-tag">SIM</span>
+      </div>
+      <div class="slot-acts">
+        <button class="slot-btn btn-pin" title="钉住槽位 (P)">📌</button>
+        <button class="slot-btn btn-move" title="移到另一侧 (⇄)">⇄</button>
+        <button class="slot-btn btn-swap" title="更换卡片 (Swap)">↻</button>
+        <button class="slot-btn btn-exp" title="展开槽位 (Expand)">⤢</button>
+      </div>
+    </div>
+    <div class="slot-body"></div>
+    <div class="slot-prev-bar" style="display:none"><span class="sp-txt"></span><button class="sp-btn">保持</button></div>
+  </div>
+</div>
+
+<!-- 右侧两个槽位 (R1, R2) -->
+<div id="slots-right" class="slots-col">
+  <div class="slot-box" id="slot-r1" data-slot="r1">
+    <div class="slot-hdr">
+      <div class="slot-tw">
+        <span class="slot-idx">R1</span>
+        <span class="slot-title"></span>
+        <span class="slot-sim-tag">SIM</span>
+      </div>
+      <div class="slot-acts">
+        <button class="slot-btn btn-pin" title="钉住槽位 (P)">📌</button>
+        <button class="slot-btn btn-move" title="移到另一侧 (⇄)">⇄</button>
+        <button class="slot-btn btn-swap" title="更换卡片 (Swap)">↻</button>
+        <button class="slot-btn btn-exp" title="展开槽位 (Expand)">⤢</button>
+      </div>
+    </div>
+    <div class="slot-body"></div>
+    <div class="slot-prev-bar" style="display:none"><span class="sp-txt"></span><button class="sp-btn">保持</button></div>
+  </div>
+  <div class="slot-box" id="slot-r2" data-slot="r2">
+    <div class="slot-hdr">
+      <div class="slot-tw">
+        <span class="slot-idx">R2</span>
+        <span class="slot-title"></span>
+        <span class="slot-sim-tag">SIM</span>
+      </div>
+      <div class="slot-acts">
+        <button class="slot-btn btn-pin" title="钉住槽位 (P)">📌</button>
+        <button class="slot-btn btn-move" title="移到另一侧 (⇄)">⇄</button>
+        <button class="slot-btn btn-swap" title="更换卡片 (Swap)">↻</button>
+        <button class="slot-btn btn-exp" title="展开槽位 (Expand)">⤢</button>
+      </div>
+    </div>
+    <div class="slot-body"></div>
+    <div class="slot-prev-bar" style="display:none"><span class="sp-txt"></span><button class="sp-btn">保持</button></div>
+  </div>
+</div>
+
+<!-- 方案 B: 右侧书签条 -->
+<div id="bm-right" class="bm-strip"></div>
+
+<!-- 底栏与时间轴 -->
+<div id="tl">
+  <div class="ln"></div>
+  <div class="pg" id="pg"></div>
+  <div class="hdp" id="hdp"></div>
+  <div class="hlb" id="hlb"></div>
+  <div class="nds" id="nds"></div>
+</div>
+<div id="drw"><div class="tabs" id="tabs"></div><div id="db"></div></div>
+<div id="bar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <button class="bt pr go" id="bGo"></button>
+    <div><div class="tk" id="met"></div><div id="nx" style="margin-top:6px;font-size:12px;color:var(--t2)"></div></div>
+  </div>
+  <div style="display:flex;gap:40px;align-items:flex-end">
+    <div><div class="lb" id="ls"></div><div class="xl" id="vs" style="margin-top:6px"></div></div>
+    <div><div class="lb" id="la"></div><div class="xl" id="va" style="margin-top:6px"></div></div>
+    <div class="hd"><div class="lb" id="le"></div><div class="m2" id="ve" style="margin-top:8px"></div></div>
+    <div class="hd"><div class="lb" id="lp"></div><div class="m2" id="vp" style="margin-top:8px"></div></div>
+  </div>
+  <button class="bt ab" id="bAb" title="Hold 1 s"><i id="abf"></i><span id="abt"></span></button>
+</div>
+</div>
+
+<script>
+// ==================== 物理仿真基础参数 ====================
+const P=[0,6,70,150,156,190,330,395,420],END=428;
+const NZ=['点火','离塔','MAX-Q','MECO','分离','转向','再入','着陆点火','触地'],NE=['Ignition','Liftoff','MAX-Q','MECO','Stage sep','Flip','Entry','Landing burn','Touchdown'];
+const K=[[0,0,0,0,100],[5,0,0,100,99.9],[6,0,0,100,99.8],[70,12000,400,100,86],[150,68000,2300,100,30],[156,69000,2300,0,30],[190,110000,2150,2,30],[260,125000,1500,0,30],[330,75000,1800,0,29.8],[345,60000,1700,60,26],[362,40000,1000,60,21],[372,30000,700,0,21],[395,3000,210,86,20],[420,0,3,86,6],[422,0,0,0,6],[428,0,0,0,6]];
+const PK=[[6,90],[150,40],[190,-30],[330,-80],[395,-88],[428,-90]];
+const EA=[0,1,2,3,4,5,6,7,8],planSet=x=>x<156?EA:x<330?[]:x<395?[0,1,5]:x<422?[0]:[];
+const PL=`<svg width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><path d='M4 2l10 6-10 6z' fill='currentColor'/></svg>`,PA=`<svg width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><path d='M3 2h4v12H3zM9 2h4v12H9z' fill='currentColor'/></svg>`;
+
+let t=0,run=false,spd=1,lang='zh',dr=false,tab=0,ab=false,fin=false,lp=-1,hist=[],log=[],cfg={burn:3000,stroke:1.6},V=null,fl=new Array(9).fill(0),short=false;
+const $=i=>document.getElementById(i),L=(z,e)=>lang==='zh'?z:e,cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+function lerp(A,x,n){let i=0;while(i<A.length-2&&A[i+1][0]<=x)i++;const a=A[i],b=A[i+1],f=cl((x-a[0])/(b[0]-a[0]),0,1);return a.map((v,j)=>j?v+(b[j]-v)*f:x)}
+function S(x){
+  const k=lerp(K,x,0),alt=k[1],v=k[2],th=k[3],pr=k[4],mass=30+5.2*pr,I=mass*169.6,rho=1.225*Math.exp(-alt/8500),sos=Math.max(295,340-.0045*alt),M=v/sos,q=.5*rho*v*v/1000;
+  const Cd=.3+.55*Math.exp(-Math.pow((M-1.1)/.28,2))+(M>1.4?.05:0),drag=q*Cd*10.5,heat=1.74e-4*Math.sqrt(rho/.3)*v*v*v/1000;
+  const k2=lerp(K,x+1,0),g=1+Math.abs(k2[2]-v)/9.81,kN=th/100*planSet(x).filter(i=>!fl[i]).length*845,pk=lerp(PK,x,0)[1];
+  const tdv=3+Math.max(0,2600-cfg.burn)/70,pg=1+tdv*tdv/(2*cfg.stroke*9.81),w=.2+6*Math.exp(-Math.pow((x-175)/8,2));
+  return{alt,v,th,pr,mass,I,rho,sos,M,q,Cd,drag,heat,g,kN,pk,tdv,pg,w};
+}
+const fT=x=>{const T=x-6,s=T<0?'T− ':'T+ ',a=Math.abs(T),m=Math.floor(a/60),sc=a-m*60;return s+String(m).padStart(2,'0')+':'+(sc<10?'0':'')+sc.toFixed(1)};
+const fA=a=>a>=10000?(a/1000).toFixed(1)+' km':Math.round(a)+' m';
+
+function mg(s,x){
+  const ph=P.filter(p=>p<=x).length-1,need=x<395?22:2+12*(s.alt/3000);
+  const nf=planSet(x).filter(i=>fl[i]).length,br=x>=395&&x<420?s.alt-s.v*s.v/(2*Math.max(.5,10*s.kN/727)):null,pm=(s.pr-need)*5.2,ld=Math.min(100,s.q/42*85+s.g*3),ca=80-12*nf-25*Math.exp(-Math.pow((x-175)/20,2))-45*Math.exp(-Math.pow((x-350)/12,2));
+  const of=x>=190?3+800*Math.pow(Math.max(0,(420-x)/230),2):null;
+  const lv=(v,w,c,inv)=>inv?(v<c?2:v<w?1:0):(v>c?2:v>w?1:0);
+  return[
+    {r:br,z:'着陆制动',e:'Landing brake',v:br==null?'—':(br<0?'−':'+')+Math.abs(Math.round(br))+' m',p:br==null?0:cl(br/12,0,100),s:br==null?0:br<50?2:br<150?1:0},
+    {z:'推进剂',e:'Propellant',v:pm.toFixed(1)+' t',p:cl(pm/40*100,0,100),s:lv(pm,5,2,1)},
+    {z:'控制权限',e:'Control auth.',v:Math.round(ca)+'%',p:ca,s:lv(ca,50,30,1)},
+    {z:'结构载荷',e:'Structural load',v:Math.round(ld)+'%',p:ld,s:lv(ld,70,90)},
+    {z:'落点偏差',e:'Impact offset',v:of==null?'—':of<100?of.toFixed(1)+' m':Math.round(of)+' m',p:of==null?0:cl(of/10,0,100),s:of==null?0:of>200?2:of>20?1:0}
+  ];
+}
+const SC=['var(--ac)','var(--wn)','var(--cr)'];
+
+function ctxF(s,x){
+  const f=(a,b,c)=>[a,b,c],ph=P.filter(p=>p<=x).length-1,pc=Math.round(s.th)+'%';
+  if(ph<=0)return[f('推力','Thrust',pc),f('发动机就绪','Engines',planSet(x).filter(i=>!fl[i]).length+' / 9'),f('推进剂','Propellant',s.pr.toFixed(1)+'%'),f('喷水抑爆','Deluge',x>2?L('开','ON'):L('待命','ARMED'))];
+  if(ph<=2)return[f('推力','Thrust',Math.round(s.kN)+' kN'),f('过载','Load',s.g.toFixed(1)+' G'),f('动压','Dyn. pressure',s.q.toFixed(1)+' kPa'),f('马赫','Mach',s.M.toFixed(2)),f('推进剂','Propellant',s.pr.toFixed(1)+'%')];
+  if(ph<=5)return[f('角速度','Rate',s.w.toFixed(1)+' °/s'),f('俯仰角','Pitch',s.pk.toFixed(0)+'°'),f('栅格舵','Grid fins',x<190?L('收起','Stowed'):L('展开','Deployed')),f('冷气消耗','Cold gas',(x>156?(x-156)*.8:0).toFixed(0)+' kg'),f('推进剂','Propellant',s.pr.toFixed(1)+'%')];
+  if(ph==6)return[f('马赫','Mach',s.M.toFixed(2)),f('热流','Heat flux',s.heat.toFixed(0)+' kW/m²'),f('阻力','Drag',s.drag.toFixed(0)+' kN'),f('阻力系数','Cd',s.Cd.toFixed(2)),f('减速度','Decel',s.g.toFixed(1)+' G')];
+  if(ph==7)return[f('离地高度','Altitude',fA(s.alt)),f('垂直速度','V-speed','−'+s.v.toFixed(1)+' m/s'),f('推力/节流','Thrust',Math.round(s.kN)+' kN · '+pc),f('预测触地过载','Pred. G',s.pg.toFixed(1)+' G / 4.5'),f('缓冲行程','Stroke',cfg.stroke.toFixed(2)+' m')];
+  return[f('触地速度','Impact',cfg.stroke&&s.tdv.toFixed(1)+' m/s'),f('峰值过载','Peak G',s.pg.toFixed(1)+' G / 4.5'),f('缓冲行程','Stroke',cfg.stroke.toFixed(2)+' m'),f('判定','Verdict',(s.pg>4.5||short)?L('坠毁','LOST'):L('成功','OK'))];
+}
+function flash(id,txt,col,ms){const e=$(id);if(!e)return;e.textContent=txt;e.style.color=col||'var(--tx)';e.style.opacity=1;if(ms)setTimeout(()=>e.style.opacity=0,ms)}
+function ev(m){log.unshift(fT(t)+'  '+m);if(log.length>60)log.pop()}
+
+// ==================== 卡片系统核心定义 ====================
+let isAuto = true;
+let alertPopupEnabled = true;
+let targetSelectSlot = null;
+let lastAlertPopupSimT = -999;
+let lastScheduleIndex = -1;
+let trendHist = [];
+
+const slots = {
+  l1: { id: 'l1', side: 'left', cardId: 'eng1', pinned: false, manualOverride: false, mountTime: 10, expanded: false, keepThisSchedule: false },
+  l2: { id: 'l2', side: 'left', cardId: 'prop', pinned: false, manualOverride: false, mountTime: 9, expanded: false, keepThisSchedule: false },
+  r1: { id: 'r1', side: 'right', cardId: 'stage', pinned: false, manualOverride: false, mountTime: 10, expanded: false, keepThisSchedule: false },
+  r2: { id: 'r2', side: 'right', cardId: 'margin', pinned: false, manualOverride: false, mountTime: 9, expanded: false, keepThisSchedule: false }
+};
+
+const SCHEDULE = [
+  { start: 0,   end: 6,   name: { zh: '点火', en: 'Ignition' },       l1: 'eng1', l2: 'prop', r1: 'stage',  r2: 'margin' },
+  { start: 6,   end: 60,  name: { zh: '离塔爬升', en: 'Liftoff' },     l1: 'eng1', l2: 'prop', r1: 'stage',  r2: 'traj' },
+  { start: 60,  end: 90,  name: { zh: 'MAX-Q', en: 'MAX-Q' },         l1: 'att',  l2: 'eng1', r1: 'margin', r2: 'aero' },
+  { start: 90,  end: 140, name: { zh: '上升加速', en: 'Ascent' },      l1: 'eng1', l2: 'prop', r1: 'traj',   r2: 'margin' },
+  { start: 140, end: 165, name: { zh: 'MECO / 分离', en: 'MECO / Sep' },l1: 'eng1', l2: 'eng2', r1: 'stage',  r2: 'log' },
+  { start: 165, end: 320, name: { zh: '转向滑行', en: 'Flip / Coast' },l1: 'att',  l2: 'prop', r1: 'traj',   r2: 'margin' },
+  { start: 320, end: 375, name: { zh: '再入大气', en: 'Entry Burn' },  l1: 'eng1', l2: 'att',  r1: 'heat',   r2: 'aero' },
+  { start: 375, end: 385, name: { zh: '气动减速', en: 'Aero Decel' },  l1: 'att',  l2: 'prop', r1: 'land',   r2: 'margin' },
+  { start: 385, end: 420, name: { zh: '着陆点火', en: 'Landing Burn' },l1: 'eng1', l2: 'prop', r1: 'land',   r2: 'margin' },
+  { start: 420, end: 428, name: { zh: '触地判定', en: 'Touchdown' },    l1: 'eng1', l2: 'prop', r1: 'land',   r2: 'log' }
+];
+
+// 卡片库 CARDS 目录
+const CARDS = {
+  // 左侧飞行器内部卡片
+  eng1: {
+    id: 'eng1', side: 'left', title: { zh: '一级发动机', en: 'STAGE 1 ENGINES' }, short: { zh: '一级', en: 'ENG1' }, isSim: false,
+    mount(el) {
+      let h = `<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+        <svg width="86" height="86" viewBox="0 0 120 120" role="group">
+          <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"/>`;
+      EA.forEach(i => {
+        const a = (22.5 + (i - 1) * 45) * Math.PI / 180, x = i ? 60 + 40 * Math.sin(a) : 60, y = i ? 60 - 40 * Math.cos(a) : 60;
+        h += `<g data-e="${i}" style="cursor:pointer">
+          <circle id="c_ec${i}" cx="${x}" cy="${y}" r="12" stroke-width="1.5"/>
+          <path id="c_ex${i}" d="M${x-5} ${y-5}L${x+5} ${y+5}M${x+5} ${y-5}L${x-5} ${y+5}" stroke="#FF4D5E" stroke-width="2" display="none"/>
+        </g>`;
+      });
+      h += `</svg>
+        <div style="flex:1">
+          <div class="lb" id="c_e_title">${L('9台梅林1D海平面版','9× Merlin 1D 1D-FT')}</div>
+          <div class="m" id="c_e_stat" style="margin:4px 0 2px"></div>
+          <div id="c_e_hint" style="font-size:11px;color:var(--t2)">${L('点击圆圈注入发动机故障','Click circle to fail engine')}</div>
+        </div>
+      </div>
+      <div id="c_e_seq" style="display:none;padding:6px 8px;border-radius:6px;background:rgba(79,209,255,.08);border:1px solid rgba(79,209,255,.2);margin-bottom:8px;font-size:11px"></div>
+      <div class="row"><span>${L('总推力','Thrust')}</span><span class="m" id="c_e_thrust"></span></div>
+      <div class="row"><span>${L('节流深度','Throttle')}</span><span class="m" id="c_e_throt"></span></div>`;
+      el.innerHTML = h;
+      el.onclick = e => {
+        const g = e.target.closest('[data-e]');
+        if (!g) return;
+        const i = +g.dataset.e;
+        fl[i] ^= 1;
+        ev(L('一级发动机 ', 'S1 Engine ') + i + (fl[i] ? L(' 故障', ' failed') : L(' 恢复', ' restored')));
+        draw();
+      };
+    },
+    update(el, s) {
+      const pl = planSet(t), activeCount = pl.filter(i => !fl[i] && s.th > 0).length;
+      EA.forEach(i => {
+        const p = pl.includes(i), f = fl[i], on = p && !f && s.th > 0, c = el.querySelector('#c_ec' + i), x = el.querySelector('#c_ex' + i);
+        if (c) {
+          c.setAttribute('fill', f ? 'rgba(255,77,94,.22)' : on ? 'rgba(79,209,255,' + (.35 + .65 * s.th / 100) + ')' : 'transparent');
+          c.setAttribute('stroke', f ? '#FF4D5E' : p ? '#4FD1FF' : 'rgba(255,255,255,.22)');
+        }
+        if (x) x.setAttribute('display', f ? '' : 'none');
+      });
+      const stat = el.querySelector('#c_e_stat'), thrust = el.querySelector('#c_e_thrust'), throt = el.querySelector('#c_e_throt'), seq = el.querySelector('#c_e_seq');
+      if (stat) stat.textContent = (pl.length ? activeCount + ' / ' + pl.length : '0 / 0') + ' ' + L('在线', 'ACTIVE');
+      if (thrust) thrust.textContent = Math.round(s.kN) + ' kN';
+      if (throt) throt.textContent = Math.round(s.th) + ' %';
+      if (seq) {
+        if (t >= 140 && t < 165) {
+          seq.style.display = 'block';
+          if (t < 150) seq.innerHTML = `<span style="color:var(--wn)">● MECO 倒计时: ${(150-t).toFixed(1)}s</span> · ${L('关机指令就绪','Armed')}`;
+          else if (t < 156) seq.innerHTML = `<span style="color:var(--cr)">● MECO 关机确认</span> · ${L('推力归零中','Zeroing thrust')}`;
+          else seq.innerHTML = `<span style="color:var(--ac)">✓ MECO 完成</span> · ${L('一级关机完毕','S1 Cutoff Confirmed')}`;
+        } else {
+          seq.style.display = 'none';
+        }
+      }
+    },
+    summary(s) { return `${Math.round(s.kN)} kN · ${planSet(t).filter(i=>!fl[i]&&s.th>0).length}/9`; },
+    alert(s) { return fl[0] ? 2 : fl.some(v => v) ? 1 : 0; }
+  },
+
+  eng2: {
+    id: 'eng2', side: 'left', title: { zh: '二级发动机 (MVac)', en: 'STAGE 2 MVAC' }, short: { zh: '二级', en: 'ENG2' }, isSim: true,
+    mount(el) {
+      el.innerHTML = `
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">
+          <svg width="78" height="78" viewBox="0 0 100 100" role="group">
+            <defs>
+              <radialGradient id="mvacPlume" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#4FD1FF" stop-opacity="0.8"/>
+                <stop offset="60%" stop-color="#16283A" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+            <!-- 真空大喷管扩展段 (借镜 spacex-engine-poc) -->
+            <circle id="c_s2_nozzle" cx="50" cy="50" r="34" fill="none" stroke="rgba(79,209,255,.4)" stroke-width="2"/>
+            <circle id="c_s2_plume" cx="50" cy="50" r="32" fill="url(#mvacPlume)" opacity="0"/>
+            <circle id="c_s2_core" cx="50" cy="50" r="10" fill="transparent" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          </svg>
+          <div style="flex:1">
+            <div class="lb">${L('单机梅林真空版 1D-Vac','Single Merlin Vacuum 1D-Vac')}</div>
+            <div class="m" id="c_s2_status" style="margin:4px 0 2px;color:var(--ac)">待命 / STANDBY</div>
+            <div style="font-size:11px;color:var(--t2)">${L('真空推力: 934 kN · 膨胀比 165:1','Vac Thrust 934 kN · AR 165:1')}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">${L('级间分离与点火条件清单:','Stage Sep & SES Checklist:')}</div>
+        <div id="c_s2_chk" style="font-size:11px;line-height:1.8;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid rgba(255,255,255,.06)"></div>`;
+    },
+    update(el, s) {
+      const st = el.querySelector('#c_s2_status'), chk = el.querySelector('#c_s2_chk'), nzl = el.querySelector('#c_s2_nozzle'), plm = el.querySelector('#c_s2_plume'), core = el.querySelector('#c_s2_core');
+      const c1 = t >= 150, c2 = t >= 153, c3 = t >= 156, c4 = t >= 160;
+      if (chk) {
+        chk.innerHTML = `
+          <div>${c1 ? '✓ <span style="color:var(--ac)">' : '○ <span>'}${L('一级主发关机 (MECO Confirmed)','S1 MECO Verified')}</span></div>
+          <div>${c2 ? '✓ <span style="color:var(--ac)">' : '○ <span>'}${L('气动解耦推杆启动 (Pneumatic Pusher)','Pneumatic Pusher Active')}</span></div>
+          <div>${c3 ? '✓ <span style="color:var(--ac)">' : '○ <span>'}${L('级间解耦确认 (Stage Separation)','Stage Sep Confirmed')}</span></div>
+          <div>${c4 ? '✓ <span style="color:var(--ac)">' : '○ <span>'}${L('二级姿态稳定锁定 (S2 Attitude Lock)','S2 Attitude Locked')}</span></div>`;
+      }
+      if (t < 140) {
+        if (st) { st.textContent = L('待命 / STANDBY', 'STANDBY'); st.style.color = 'var(--t2)'; }
+        if (plm) plm.style.opacity = '0';
+        if (core) core.setAttribute('fill', 'transparent');
+      } else if (t < 150) {
+        if (st) { st.textContent = L('点火准备 (ARMED)', 'ARMED'); st.style.color = 'var(--wn)'; }
+        if (plm) plm.style.opacity = '0.2';
+      } else if (t < 156) {
+        if (st) { st.textContent = L('分离倒计时', 'SEP COUNTDOWN'); st.style.color = 'var(--wn)'; }
+        if (plm) plm.style.opacity = '0.4';
+      } else if (t < 162) {
+        const sesRemain = Math.max(0, 162 - t).toFixed(1);
+        if (st) { st.textContent = `SES-1 倒计时 ${sesRemain}s`; st.style.color = 'var(--ac)'; }
+        if (plm) plm.style.opacity = '0.7';
+        if (core) core.setAttribute('fill', '#4FD1FF');
+      } else {
+        if (st) { st.textContent = L('SES-1 燃烧中 · 934 kN', 'SES-1 BURNING · 934 kN'); st.style.color = 'var(--ac)'; }
+        if (plm) plm.style.opacity = '1';
+        if (core) core.setAttribute('fill', '#4FD1FF');
+      }
+    },
+    summary(s) { return t >= 162 ? 'SES-1 燃烧中' : t >= 150 ? '级间分离序列' : '待命中'; },
+    alert(s) { return 0; }
+  },
+
+  prop: {
+    id: 'prop', side: 'left', title: { zh: '推进剂账本', en: 'PROPELLANT LEDGER' }, short: { zh: '推进', en: 'PROP' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between">
+            <span class="lb">${L('剩余推进剂','Remaining')}</span>
+            <span class="m" id="c_pr_pct"></span>
+          </div>
+          <div class="tr"><i id="c_pr_bar" style="background:var(--ac)"></i></div>
+        </div>
+        <div class="row"><span>${L('当前储量','Current Mass')}</span><span class="m" id="c_pr_mass"></span></div>
+        <div class="row"><span>${L('主发动机消耗','Main Engines')}</span><span class="m" id="c_pr_main"></span></div>
+        <div class="row"><span>${L('姿控冷气消耗','RCS Cold Gas')}</span><span class="m" id="c_pr_cold"></span></div>
+        <div class="row"><span>${L('着陆预留要求','Landing Reserve')}</span><span class="m" id="c_pr_need"></span></div>`;
+    },
+    update(el, s) {
+      const u = (100 - s.pr) * 5.2, cg = t > 156 ? (t - 156) * .8 : 0, need = t < 395 ? 22 : 2 + 12 * (s.alt / 3000);
+      const pct = el.querySelector('#c_pr_pct'), bar = el.querySelector('#c_pr_bar'), mass = el.querySelector('#c_pr_mass'), main = el.querySelector('#c_pr_main'), cold = el.querySelector('#c_pr_cold'), nd = el.querySelector('#c_pr_need');
+      if (pct) pct.textContent = s.pr.toFixed(1) + '%';
+      if (bar) { bar.style.width = cl(s.pr, 0, 100) + '%'; bar.style.background = s.pr < 15 ? 'var(--cr)' : s.pr < 30 ? 'var(--wn)' : 'var(--ac)'; }
+      if (mass) mass.textContent = (s.pr * 5.2).toFixed(1) + ' t';
+      if (main) main.textContent = Math.max(0, u - cg / 1000).toFixed(1) + ' t';
+      if (cold) cold.textContent = cg.toFixed(0) + ' kg';
+      if (nd) nd.textContent = (need * 5.2).toFixed(1) + ' t';
+    },
+    summary(s) { return `${s.pr.toFixed(1)}% · ${(s.pr*5.2).toFixed(1)} t`; },
+    alert(s) { return s.pr < 10 ? 2 : s.pr < 25 ? 1 : 0; }
+  },
+
+  att: {
+    id: 'att', side: 'left', title: { zh: '姿态与控制', en: 'ATTITUDE & RCS' }, short: { zh: '姿态', en: 'ATT' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div class="row"><span>${L('俯仰姿态','Pitch Angle')}</span><span class="m" id="c_at_pk"></span></div>
+        <div class="row"><span>${L('俯仰角速度','Angular Rate')}</span><span class="m" id="c_at_w"></span></div>
+        <div class="row"><span>${L('钛合金栅格舵','Grid Fins')}</span><span class="m" id="c_at_gf"></span></div>
+        <div class="row"><span>${L('氮气冷气姿控','Cold Gas RCS')}</span><span class="m" id="c_at_rcs"></span></div>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between">
+            <span class="lb">${L('控制权限余量','Control Authority')}</span>
+            <span class="m" id="c_at_ca"></span>
+          </div>
+          <div class="tr"><i id="c_at_cabar" style="background:var(--ac)"></i></div>
+        </div>`;
+    },
+    update(el, s) {
+      const nf = planSet(t).filter(i => fl[i]).length;
+      const ca = cl(80 - 12 * nf - 25 * Math.exp(-Math.pow((t - 175) / 20, 2)) - 45 * Math.exp(-Math.pow((t - 350) / 12, 2)), 0, 100);
+      const pk = el.querySelector('#c_at_pk'), w = el.querySelector('#c_at_w'), gf = el.querySelector('#c_at_gf'), rcs = el.querySelector('#c_at_rcs'), cap = el.querySelector('#c_at_ca'), cabar = el.querySelector('#c_at_cabar');
+      if (pk) pk.textContent = s.pk.toFixed(1) + '°';
+      if (w) w.textContent = s.w.toFixed(2) + ' °/s';
+      if (gf) gf.textContent = t < 190 ? L('收起 (Stowed)', 'Stowed') : L('展开 (Deployed)', 'Deployed');
+      if (rcs) rcs.textContent = t > 156 ? L('姿控激活 · 喷气中', 'Active · Firing') : L('待命', 'Standby');
+      if (cap) cap.textContent = Math.round(ca) + '%';
+      if (cabar) { cabar.style.width = ca + '%'; cabar.style.background = ca < 30 ? 'var(--cr)' : ca < 50 ? 'var(--wn)' : 'var(--ac)'; }
+    },
+    summary(s) { return `俯仰 ${s.pk.toFixed(0)}° · 速率 ${s.w.toFixed(1)}°/s`; },
+    alert(s) { const nf = planSet(t).filter(i => fl[i]).length; return nf >= 3 ? 2 : nf > 0 ? 1 : 0; }
+  },
+
+  mass: {
+    id: 'mass', side: 'left', title: { zh: '质量与惯量特性', en: 'MASS & INERTIA' }, short: { zh: '质量', en: 'MASS' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between">
+            <span class="lb">${L('星箭总质量','Total Mass')}</span>
+            <span class="m" id="c_ms_tot" style="font-weight:700"></span>
+          </div>
+          <div class="tr"><i id="c_ms_bar" style="background:var(--ac)"></i></div>
+        </div>
+        <div class="row"><span>${L('干结构质量','Dry Mass')}</span><span class="m">30.0 t</span></div>
+        <div class="row"><span>${L('有效推进剂','Propellant')}</span><span class="m" id="c_ms_prop"></span></div>
+        <div class="row"><span>${L('当前推重比 (TWR)','Thrust-to-Weight')}</span><span class="m" id="c_ms_twr" style="font-weight:700"></span></div>
+        <div class="row"><span>${L('俯仰转动惯量','Pitch Inertia')}</span><span class="m" id="c_ms_i"></span></div>
+        <div class="row"><span>${L('质心预估高度 (CoG)','Center of Gravity')}</span><span class="m" id="c_ms_cog"></span></div>
+        <div class="row"><span>${L('质量/惯量模型一致性','Model Consistency')}</span><span class="m" id="c_ms_chk" style="color:var(--ac)">✓ PASS</span></div>`;
+    },
+    update(el, s) {
+      const tot = el.querySelector('#c_ms_tot');
+      const bar = el.querySelector('#c_ms_bar');
+      const prop = el.querySelector('#c_ms_prop');
+      const twr = el.querySelector('#c_ms_twr');
+      const iEl = el.querySelector('#c_ms_i');
+      const cog = el.querySelector('#c_ms_cog');
+      const chk = el.querySelector('#c_ms_chk');
+
+      const curTwr = s.mass > 0 ? (s.kN / (s.mass * 9.80665)) : 0;
+      const estCog = 15.0 + 12.0 * (s.pr / 100);
+      const ok = s.mass > 0 && s.I / s.mass > 169 && s.I / s.mass < 170;
+
+      if (tot) tot.textContent = s.mass.toFixed(1) + ' t';
+      if (bar) bar.style.width = cl(s.mass / 550 * 100, 5, 100) + '%';
+      if (prop) prop.textContent = (s.pr * 5.2).toFixed(1) + ' t (' + s.pr.toFixed(1) + '%)';
+      if (twr) {
+        twr.textContent = curTwr > 0 ? curTwr.toFixed(2) : '0.00';
+        twr.style.color = curTwr > 4.5 ? 'var(--cr)' : curTwr > 1.2 ? 'var(--ac)' : 'var(--t2)';
+      }
+      if (iEl) iEl.textContent = Math.round(s.I).toLocaleString() + ' t·m²';
+      if (cog) cog.textContent = estCog.toFixed(1) + ' m';
+      if (chk) {
+        chk.textContent = ok ? L('✓ 一致 (169.6)', '✓ PASS (169.6)') : L('✗ 异常', '✗ FAIL');
+        chk.style.color = ok ? 'var(--ac)' : 'var(--cr)';
+      }
+    },
+    summary(s) {
+      const curTwr = s.mass > 0 ? (s.kN / (s.mass * 9.80665)) : 0;
+      return `${s.mass.toFixed(1)} t · TWR ${curTwr.toFixed(2)}`;
+    },
+    alert(s) {
+      const curTwr = s.mass > 0 ? (s.kN / (s.mass * 9.80665)) : 0;
+      return curTwr > 5.5 ? 2 : curTwr > 4.5 ? 1 : 0;
+    }
+  },
+
+  gonogo: {
+    id: 'gonogo', side: 'left', title: { zh: 'GO / NO-GO 席位', en: 'POLL MATRIX' }, short: { zh: '席位', en: 'GO' }, isSim: true,
+    mount(el) {
+      const seats = [
+        ['FIDO', '轨道弹道', 'Flight Dyn.'], ['GUID', '制导导航', 'Guidance'],
+        ['PROP', '推进系统', 'Propulsion'], ['AERO', '气动外形', 'Aerodynamics'],
+        ['WEAT', '发射气象', 'Weather'], ['RANG', '靶场安全', 'Range Safety'],
+        ['RECV', '回收平台', 'Recovery Ship'], ['LEGS', '着陆机构', 'Landing Legs']
+      ];
+      el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="c_go_grid">
+        ${seats.map(s => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px;border:1px solid rgba(255,255,255,.06)" title="${s[0]}: ${L(s[1], s[2])}">
+            <div style="display:flex;flex-direction:column;line-height:1.2;overflow:hidden;margin-right:6px">
+              <span style="font-size:11px;font-weight:600;color:var(--tx)">${s[0]}</span>
+              <span style="font-size:9px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${L(s[1], s[2])}</span>
+            </div>
+            <span class="m go-val" style="font-size:11px;color:var(--ac);font-weight:700;white-space:nowrap">GO ✓</span>
+          </div>
+        `).join('')}
+      </div>`;
+    },
+    update(el, s) {
+      const vals = el.querySelectorAll('.go-val');
+      const bad = ab || fl.some(v => v);
+      if (vals.length >= 3) {
+        vals[2].textContent = bad ? 'NO-GO ✗' : 'GO ✓';
+        vals[2].style.color = bad ? 'var(--cr)' : 'var(--ac)';
+      }
+    },
+    summary(s) { return ab ? 'NO-GO 状态' : '全席位 GO (8/8)'; },
+    alert(s) { return ab ? 2 : 0; }
+  },
+
+  // 右侧飞行状况卡片
+  stage: {
+    id: 'stage', side: 'right', title: { zh: '阶段实时', en: 'STAGE TELEMETRY' }, short: { zh: '阶段', en: 'STG' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `<div id="c_st_content"></div>`;
+    },
+    update(el, s) {
+      const ph = P.filter(p => p <= t).length - 1;
+      const c = el.querySelector('#c_st_content');
+      if (!c) return;
+      c.innerHTML = `
+        <div class="lb" style="margin-bottom:8px">${L(NZ[ph], NE[ph])} · ${L('实时遥测','LIVE TELEMETRY')}</div>` +
+        ctxF(s, t).map(r => `<div class="row"><span>${L(r[0], r[1])}</span><span class="m">${r[2]}</span></div>`).join('');
+    },
+    summary(s) { const ph = P.filter(p => p <= t).length - 1; return `${L(NZ[ph], NE[ph])} · ${fT(t)}`; },
+    alert(s) { return 0; }
+  },
+
+  margin: {
+    id: 'margin', side: 'right', title: { zh: '任务裕度', en: 'MISSION MARGINS' }, short: { zh: '裕度', en: 'MARG' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `<div id="c_mg_list"></div>`;
+    },
+    update(el, s) {
+      const list = el.querySelector('#c_mg_list');
+      if (!list) return;
+      const m = mg(s, t);
+      list.innerHTML = m.map(r => `
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:12px;color:var(--t2)">${L(r.z, r.e)}</span>
+            <span class="m" style="color:${r.s ? SC[r.s] : 'var(--tx)'}">${r.v}</span>
+          </div>
+          <div class="tr"><i style="width:${r.p}%;background:${SC[r.s]}"></i></div>
+        </div>`).join('');
+    },
+    summary(s) { const m = mg(s, t); return `最紧缩裕度: ${m[0].v}`; },
+    alert(s) { const m = mg(s, t); return Math.max(...m.map(a => a.s)); }
+  },
+
+  traj: {
+    id: 'traj', side: 'right', title: { zh: '飞行轨迹与落点', en: 'TRAJECTORY' }, short: { zh: '轨迹', en: 'TRAJ' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div style="display:flex;justify-content:center;margin-bottom:6px">
+          <canvas id="c_tr_cv" width="260" height="130" style="background:rgba(0,0,0,.2);border-radius:8px"></canvas>
+        </div>
+        <div class="row"><span>${L('预测最高顶点 (Apogee)','Apogee')}</span><span class="m">125.0 km</span></div>
+        <div class="row"><span>${L('下行距离 (Downrange)','Downrange')}</span><span class="m" id="c_tr_dn"></span></div>`;
+    },
+    update(el, s) {
+      const dn = el.querySelector('#c_tr_dn');
+      if (dn) dn.textContent = (t < 6 ? 0 : Math.min(620, (t - 6) * 1.5)).toFixed(1) + ' km';
+      const cv = el.querySelector('#c_tr_cv');
+      if (!cv) return;
+      const c = cv.getContext('2d');
+      c.clearRect(0, 0, 260, 130);
+      // 地球曲率
+      c.strokeStyle = 'rgba(79,209,255,.35)';
+      c.beginPath();
+      c.arc(130, 260, 180, 0, Math.PI * 2);
+      c.stroke();
+      // 理论轨迹线
+      c.strokeStyle = 'rgba(255,255,255,.25)';
+      c.beginPath();
+      for (let x = 6; x <= END; x += 4) {
+        const alt = S(x).alt;
+        const px = 20 + 220 * (x - 6) / 422;
+        const py = 110 - alt / 125000 * 80;
+        if (x === 6) c.moveTo(px, py); else c.lineTo(px, py);
+      }
+      c.stroke();
+      // 当前星箭位置光点
+      const curAlt = s.alt;
+      const curPx = 20 + 220 * Math.max(0, t - 6) / 422;
+      const curPy = 110 - curAlt / 125000 * 80;
+      c.fillStyle = '#4FD1FF';
+      c.beginPath();
+      c.arc(curPx, curPy, 4.5, 0, Math.PI * 2);
+      c.fill();
+    },
+    summary(s) { return `高度 ${fA(s.alt)} · 顶点 125 km`; },
+    alert(s) { return 0; }
+  },
+
+  aero: {
+    id: 'aero', side: 'right', title: { zh: '气动与结构载荷', en: 'AERODYNAMICS' }, short: { zh: '气动', en: 'AERO' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div class="row"><span>${L('飞行马赫数','Mach Number')}</span><span class="m" id="c_ae_m"></span></div>
+        <div class="row"><span>${L('动态压强 Q','Dyn. Pressure')}</span><span class="m" id="c_ae_q"></span></div>
+        <div class="row"><span>${L('气动阻力','Aerodynamic Drag')}</span><span class="m" id="c_ae_dr"></span></div>
+        <div class="row"><span>${L('阻力系数 Cd (跨声速)','Drag Coeff Cd')}</span><span class="m" id="c_ae_cd"></span></div>
+        <div class="row"><span>${L('当前减速度','Deceleration G')}</span><span class="m" id="c_ae_g"></span></div>`;
+    },
+    update(el, s) {
+      const m = el.querySelector('#c_ae_m'), q = el.querySelector('#c_ae_q'), dr = el.querySelector('#c_ae_dr'), cd = el.querySelector('#c_ae_cd'), g = el.querySelector('#c_ae_g');
+      if (m) m.textContent = s.M.toFixed(2) + (s.M >= 0.8 && s.M <= 1.2 ? ` (${L('跨声速','Transonic')})` : '');
+      if (q) { q.textContent = s.q.toFixed(1) + ' kPa'; q.style.color = s.q > 35 ? 'var(--wn)' : 'var(--tx)'; }
+      if (dr) dr.textContent = Math.round(s.drag) + ' kN';
+      if (cd) cd.textContent = s.Cd.toFixed(3) + (Math.abs(s.M - 1.1) < .28 ? ' ▲' : '');
+      if (g) g.textContent = s.g.toFixed(1) + ' G';
+    },
+    summary(s) { return `马赫 ${s.M.toFixed(2)} · 动压 ${s.q.toFixed(1)} kPa`; },
+    alert(s) { return s.q > 42 ? 2 : s.q > 35 ? 1 : 0; }
+  },
+
+  heat: {
+    id: 'heat', side: 'right', title: { zh: '再入热环境', en: 'RE-ENTRY THERMAL' }, short: { zh: '热环', en: 'HEAT' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div class="row"><span>${L('对流热流 (∝√ρ·v³)','Heat Flux')}</span><span class="m" id="c_ht_flux"></span></div>
+        <div class="row"><span>${L('防热大底预估温度','Shield Temp')}</span><span class="m" id="c_ht_temp"></span></div>
+        <div class="row"><span>${L('等离子体屏蔽状态','Plasma Sheath')}</span><span class="m" id="c_ht_pl"></span></div>
+        <div class="row"><span>${L('热防护安全裕度','Thermal Margin')}</span><span class="m" id="c_ht_mg"></span></div>`;
+    },
+    update(el, s) {
+      const estTemp = Math.round(25 + s.heat * 1.8);
+      const flux = el.querySelector('#c_ht_flux'), temp = el.querySelector('#c_ht_temp'), pl = el.querySelector('#c_ht_pl'), mg = el.querySelector('#c_ht_mg');
+      if (flux) { flux.textContent = s.heat.toFixed(0) + ' kW/m²'; flux.style.color = s.heat > 300 ? 'var(--cr)' : s.heat > 150 ? 'var(--wn)' : 'var(--tx)'; }
+      if (temp) temp.textContent = estTemp + ' °C';
+      if (pl) pl.textContent = s.heat > 250 ? L('电离黑障中断','Blackout') : s.heat > 50 ? L('鞘层形成','Forming') : L('正常通信','Nominal');
+      if (mg) { const m = Math.max(0, 100 - s.heat / 6); mg.textContent = Math.round(m) + '%'; mg.style.color = m < 30 ? 'var(--cr)' : 'var(--ac)'; }
+    },
+    summary(s) { return `热流 ${s.heat.toFixed(0)} kW/m²`; },
+    alert(s) { return s.heat > 450 ? 2 : s.heat > 250 ? 1 : 0; }
+  },
+
+  land: {
+    id: 'land', side: 'right', title: { zh: '着陆缓冲系统', en: 'LANDING SYSTEM' }, short: { zh: '着陆', en: 'LAND' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div class="row"><span>${L('离地雷达高度','Radar Altitude')}</span><span class="m" id="c_ld_alt"></span></div>
+        <div class="row"><span>${L('垂直下降速度','V-Speed')}</span><span class="m" id="c_ld_v"></span></div>
+        <div class="row"><span>${L('制动高度余量','Brake Margin')}</span><span class="m" id="c_ld_br"></span></div>
+        <div class="row"><span>${L('预测触地过载','Pred. Load')}</span><span class="m" id="c_ld_g"></span></div>
+        <div class="row"><span>${L('着陆腿缓冲行程','Leg Stroke')}</span><span class="m" id="c_ld_stk"></span></div>
+        <div class="row"><span>${L('触地判定状态','Verdict Status')}</span><span class="m" id="c_ld_res" style="font-weight:700"></span></div>`;
+    },
+    update(el, s) {
+      const br = t >= 395 && t < 420 ? s.alt - s.v * s.v / (2 * Math.max(.5, 10 * s.kN / 727)) : null;
+      const alt = el.querySelector('#c_ld_alt'), v = el.querySelector('#c_ld_v'), brm = el.querySelector('#c_ld_br'), g = el.querySelector('#c_ld_g'), stk = el.querySelector('#c_ld_stk'), res = el.querySelector('#c_ld_res');
+      if (alt) alt.textContent = fA(s.alt);
+      if (v) v.textContent = (s.v > 0 ? '−' : '') + s.v.toFixed(1) + ' m/s';
+      if (brm) {
+        brm.textContent = br == null ? '—' : (br < 0 ? '−' : '+') + Math.abs(Math.round(br)) + ' m';
+        brm.style.color = br == null ? 'var(--tx)' : br < 50 ? 'var(--cr)' : br < 150 ? 'var(--wn)' : 'var(--ac)';
+      }
+      if (g) g.textContent = s.pg.toFixed(1) + ' G / 4.5 G';
+      if (stk) stk.textContent = cfg.stroke.toFixed(2) + ' m';
+      if (res) {
+        if (t >= 420) {
+          const bad = s.pg > 4.5 || short;
+          res.textContent = bad ? L('坠毁 / LOST', 'LOST') : L('着陆成功 / OK', 'LANDED');
+          res.style.color = bad ? 'var(--cr)' : 'var(--ac)';
+        } else {
+          res.textContent = t >= 395 ? L('点火制动中', 'Braking') : L('下降待命中', 'Standby');
+          res.style.color = 'var(--t2)';
+        }
+      }
+    },
+    summary(s) { return `${fA(s.alt)} · −${s.v.toFixed(1)} m/s`; },
+    alert(s) {
+      const br = t >= 395 && t < 420 ? s.alt - s.v * s.v / (2 * Math.max(.5, 10 * s.kN / 727)) : null;
+      return (br != null && br < 50) || (t >= 420 && s.pg > 4.5) ? 2 : (br != null && br < 150) ? 1 : 0;
+    }
+  },
+
+  trend: {
+    id: 'trend', side: 'right', title: { zh: '60秒遥测趋势', en: '60s TRENDS' }, short: { zh: '趋势', en: 'TRND' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `
+        <div style="display:flex;justify-content:center;margin-bottom:6px">
+          <canvas id="c_trnd_cv" width="260" height="110" style="background:rgba(0,0,0,.25);border-radius:6px;width:100%;height:110px"></canvas>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
+          <div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#4FD1FF"></span>
+            <span style="color:var(--t2)">${L('推力','Thrust')}:</span>
+            <span class="m" id="c_trnd_val_kn" style="color:#4FD1FF;font-weight:600">0 kN</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#FFB020"></span>
+            <span style="color:var(--t2)">${L('过载','Load')}:</span>
+            <span class="m" id="c_trnd_val_g" style="color:#FFB020;font-weight:600">1.0 G</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#FF4D5E"></span>
+            <span style="color:var(--t2)">${L('动压 Q','Dyn Q')}:</span>
+            <span class="m" id="c_trnd_val_q" style="color:#FF4D5E;font-weight:600">0 kPa</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#A78BFA"></span>
+            <span style="color:var(--t2)">${L('角速度','Rate')}:</span>
+            <span class="m" id="c_trnd_val_w" style="color:#A78BFA;font-weight:600">0 °/s</span>
+          </div>
+        </div>`;
+    },
+    update(el, s) {
+      const vKn = el.querySelector('#c_trnd_val_kn');
+      const vG = el.querySelector('#c_trnd_val_g');
+      const vQ = el.querySelector('#c_trnd_val_q');
+      const vW = el.querySelector('#c_trnd_val_w');
+      if (vKn) vKn.textContent = Math.round(s.kN) + ' kN';
+      if (vG) vG.textContent = s.g.toFixed(1) + ' G';
+      if (vQ) vQ.textContent = s.q.toFixed(1) + ' kPa';
+      if (vW) vW.textContent = s.w.toFixed(1) + ' °/s';
+
+      const cv = el.querySelector('#c_trnd_cv');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.strokeStyle = 'rgba(255,255,255,.07)';
+      ctx.lineWidth = 1;
+      [0.25, 0.5, 0.75].forEach(r => {
+        ctx.beginPath();
+        ctx.moveTo(0, H * r);
+        ctx.lineTo(W, H * r);
+        ctx.stroke();
+      });
+      ctx.fillStyle = 'rgba(138,148,163,.45)';
+      ctx.font = '9px monospace';
+      ctx.fillText('-60s', 4, H - 3);
+      ctx.fillText('-30s', W / 2 - 10, H - 3);
+      ctx.fillText('0s', W - 16, H - 3);
+
+      if (trendHist.length < 2) {
+        ctx.fillStyle = 'rgba(138,148,163,.55)';
+        ctx.fillText(L('等待遥测数据...', 'Awaiting telemetry...'), W / 2 - 40, H / 2);
+        return;
+      }
+
+      const tStart = Math.max(0, t - 60);
+      const tSpan = Math.max(1, t - tStart);
+
+      const drawLine = (prop, maxVal, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < trendHist.length; i++) {
+          const pt = trendHist[i];
+          if (pt.t < tStart) continue;
+          const x = ((pt.t - tStart) / tSpan) * W;
+          const y = H - 10 - (cl(pt[prop] / maxVal, 0, 1) * (H - 20));
+          if (!started) { ctx.moveTo(x, y); started = true; }
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      };
+
+      drawLine('kN', 8000, '#4FD1FF');
+      drawLine('g', 5.0, '#FFB020');
+      drawLine('q', 45, '#FF4D5E');
+      drawLine('w', 6.0, '#A78BFA');
+    },
+    summary(s) { return `G: ${s.g.toFixed(1)} · Q: ${s.q.toFixed(1)} kPa · ${s.w.toFixed(1)} °/s`; },
+    alert(s) { return s.g > 4.5 || s.q > 42 ? 2 : s.g > 3.5 || s.q > 35 ? 1 : 0; }
+  },
+
+  log: {
+    id: 'log', side: 'right', title: { zh: '事件日志', en: 'EVENT LOG' }, short: { zh: '日志', en: 'LOG' }, isSim: false,
+    mount(el) {
+      el.innerHTML = `<div class="lg" id="c_lg_box" style="max-height:190px;overflow-y:auto;line-height:1.6"></div>`;
+    },
+    update(el, s) {
+      const box = el.querySelector('#c_lg_box');
+      if (box) box.innerHTML = log.length ? log.slice(0, 15).join('<br>') : L('暂无事件记录', 'No events logged yet');
+    },
+    summary(s) { return `${log.length} 条飞行记录`; },
+    alert(s) { return 0; }
+  }
+};
+
+// ==================== 槽位与书签条控制器 ====================
+
+// 原子槽位互换工具：用于 ⇄、拖拽、快速选择菜单、或同侧换牌
+function swapSlots(sidA, sidB, animate = true) {
+  const slotA = slots[sidA];
+  const slotB = slots[sidB];
+  if (!slotA || !slotB || sidA === sidB) return false;
+
+  const cardAId = slotA.cardId;
+  const cardBId = slotB.cardId;
+  const cardA = CARDS[cardAId];
+  const cardB = CARDS[cardBId];
+  if (!cardA || !cardB) return false;
+
+  // 互换所属侧别（若跨侧互换）
+  if (slotA.side !== slotB.side) {
+    cardA.side = slotB.side;
+    cardB.side = slotA.side;
+  }
+
+  slotA.cardId = cardBId;
+  slotB.cardId = cardAId;
+  slotA.mountTime = Date.now();
+  slotB.mountTime = Date.now();
+
+  const slotAEl = $(`slot-${sidA}`);
+  const slotBEl = $(`slot-${sidB}`);
+  const bodyA = slotAEl ? slotAEl.querySelector('.slot-body') : null;
+  const bodyB = slotBEl ? slotBEl.querySelector('.slot-body') : null;
+  const titleA = slotAEl ? slotAEl.querySelector('.slot-title') : null;
+  const titleB = slotBEl ? slotBEl.querySelector('.slot-title') : null;
+  const simA = slotAEl ? slotAEl.querySelector('.slot-sim-tag') : null;
+  const simB = slotBEl ? slotBEl.querySelector('.slot-sim-tag') : null;
+
+  // 立即清空两者 DOM 树，彻底防止 duplicate DOM ID 存在
+  if (bodyA) bodyA.innerHTML = '';
+  if (bodyB) bodyB.innerHTML = '';
+
+  cardB.mount(bodyA);
+  cardA.mount(bodyB);
+  if (V) {
+    cardB.update(bodyA, V);
+    cardA.update(bodyB, V);
+  }
+
+  if (titleA) titleA.textContent = L(cardB.title.zh, cardB.title.en);
+  if (titleB) titleB.textContent = L(cardA.title.zh, cardA.title.en);
+  if (simA) simA.style.display = cardB.isSim ? 'inline-block' : 'none';
+  if (simB) simB.style.display = cardA.isSim ? 'inline-block' : 'none';
+
+  if (animate) {
+    if (slotAEl) {
+      slotAEl.classList.add('slot-flash');
+      setTimeout(() => slotAEl.classList.remove('slot-flash'), 600);
+    }
+    if (slotBEl) {
+      slotBEl.classList.add('slot-flash');
+      setTimeout(() => slotBEl.classList.remove('slot-flash'), 600);
+    }
+  }
+
+  closeSlotPicker(sidA);
+  closeSlotPicker(sidB);
+  renderBookmarks();
+  saveSettings();
+  return true;
+}
+
+function mountCard(slotId, cardId, animate = true) {
+  const slot = slots[slotId];
+  const card = CARDS[cardId];
+  if (!slot || !card) return false;
+
+  // 如果该槽位已经处于此卡片，直接确保更新并返回
+  if (slot.cardId === cardId) {
+    const slotEl = $(`slot-${slotId}`);
+    if (slotEl) {
+      const bodyEl = slotEl.querySelector('.slot-body');
+      if (bodyEl && !bodyEl.children.length) {
+        card.mount(bodyEl);
+        if (V) card.update(bodyEl, V);
+      }
+    }
+    return true;
+  }
+
+  // 检查 cardId 是否已在别的槽位显示
+  const otherSlotId = Object.keys(slots).find(k => k !== slotId && slots[k].cardId === cardId);
+  if (otherSlotId) {
+    // 若占用该卡片的槽位已被钉住锁定，决不能偷取或覆写
+    if (slots[otherSlotId].pinned) {
+      flash('alr', L(`该卡片已在钉住的 ${otherSlotId.toUpperCase()} 槽位锁定`, `Card is locked in pinned ${otherSlotId.toUpperCase()}`), 'var(--wn)', 1800);
+      return false;
+    }
+    // 否则执行两槽原子互换
+    return swapSlots(slotId, otherSlotId, animate);
+  }
+
+  const slotEl = $(`slot-${slotId}`);
+  if (!slotEl) return false;
+  const bodyEl = slotEl.querySelector('.slot-body');
+  const titleEl = slotEl.querySelector('.slot-title');
+  const simTag = slotEl.querySelector('.slot-sim-tag');
+
+  // 若卡片侧别与槽位侧别不同，更新卡片侧别以匹配所属书签栏
+  if (card.side !== slot.side) {
+    card.side = slot.side;
+  }
+
+  if (animate && slot.cardId && slot.cardId !== cardId) {
+    bodyEl.classList.add('card-anim-out');
+    setTimeout(() => {
+      bodyEl.innerHTML = '';
+      card.mount(bodyEl);
+      if (V) card.update(bodyEl, V);
+      bodyEl.classList.remove('card-anim-out');
+      bodyEl.classList.add('card-anim-in');
+      setTimeout(() => bodyEl.classList.remove('card-anim-in'), 200);
+    }, 120);
+  } else {
+    bodyEl.innerHTML = '';
+    card.mount(bodyEl);
+    if (V) card.update(bodyEl, V);
+  }
+
+  if (titleEl) titleEl.textContent = L(card.title.zh, card.title.en);
+  if (simTag) simTag.style.display = card.isSim ? 'inline-block' : 'none';
+  slot.cardId = cardId;
+  slot.mountTime = Date.now();
+
+  if (animate) {
+    slotEl.classList.add('slot-flash');
+    setTimeout(() => slotEl.classList.remove('slot-flash'), 600);
+  }
+
+  closeSlotPicker(slotId);
+  renderBookmarks();
+  saveSettings();
+  return true;
+}
+
+function renderBookmarks() {
+  ['left', 'right'].forEach(side => {
+    const strip = $(`bm-${side}`);
+    if (!strip) return;
+    const cardsOnSide = Object.values(CARDS).filter(c => c.side === side);
+    strip.innerHTML = cardsOnSide.map(c => {
+      // 检查当前卡片在哪个槽位
+      let slotNum = '';
+      if (slots[side === 'left' ? 'l1' : 'r1'].cardId === c.id) slotNum = '①';
+      else if (slots[side === 'left' ? 'l2' : 'r2'].cardId === c.id) slotNum = '②';
+      else {
+        // 如果被移到了对侧槽位，也正确标注槽位编号
+        const inSlotId = Object.keys(slots).find(k => slots[k].cardId === c.id);
+        if (inSlotId) slotNum = inSlotId.toUpperCase();
+      }
+      const isActive = slotNum !== '';
+      const summaryText = V && c.summary ? c.summary(V) : '';
+
+      return `
+        <div class="bm-item ${isActive ? 'active' : ''}" draggable="true" data-cid="${c.id}" data-side="${side}">
+          ${slotNum ? `<span class="bm-badge">${slotNum}</span>` : ''}
+          <span class="bm-text">${L(c.short.zh, c.short.en)}</span>
+          <span class="bm-alert" id="bm_al_${c.id}"></span>
+          <div class="bm-hover-pop">
+            <div style="font-weight:600">${L(c.title.zh, c.title.en)}</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:2px">${summaryText}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // 点击换牌与拖拽事件绑定
+    strip.querySelectorAll('.bm-item').forEach(item => {
+      item.onclick = () => swapCardByBookmark(item.dataset.cid);
+      item.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'bookmark', cardId: item.dataset.cid }));
+        e.dataTransfer.effectAllowed = 'copyMove';
+        item.classList.add('dragging');
+      };
+      item.ondragend = () => {
+        item.classList.remove('dragging');
+        document.querySelectorAll('.slot-box').forEach(el => el.classList.remove('drag-over'));
+      };
+    });
+  });
+}
+
+function swapCardByBookmark(cardId) {
+  const card = CARDS[cardId];
+  if (!card) return;
+
+  // 如果处于指定槽位模式 (点击了槽位 ↻)
+  if (targetSelectSlot) {
+    const targetSlot = slots[targetSelectSlot];
+    if (targetSlot) {
+      if (targetSlot.pinned) {
+        flash('alr', L(`槽位 ${targetSelectSlot.toUpperCase()} 已钉住锁定，请先取消钉住`, `Slot ${targetSelectSlot.toUpperCase()} is pinned, unpin first`), 'var(--wn)', 1800);
+        exitTargetSelectMode();
+        return;
+      }
+      const existingSlotId = Object.keys(slots).find(k => slots[k].cardId === cardId);
+      if (existingSlotId && existingSlotId !== targetSelectSlot) {
+        if (slots[existingSlotId].pinned) {
+          flash('alr', L(`该卡片已在钉住的 ${existingSlotId.toUpperCase()} 槽位锁定`, `Card is locked in pinned ${existingSlotId.toUpperCase()}`), 'var(--wn)', 1800);
+          exitTargetSelectMode();
+          return;
+        }
+        swapSlots(targetSelectSlot, existingSlotId, true);
+      } else {
+        mountCard(targetSelectSlot, cardId, true);
+      }
+      targetSlot.manualOverride = true;
+      exitTargetSelectMode();
+      return;
+    }
+  }
+
+  // 检查是否已经在某个槽位显示
+  const existingSlotId = Object.keys(slots).find(k => slots[k].cardId === cardId);
+  if (existingSlotId) {
+    const slotEl = $(`slot-${existingSlotId}`);
+    if (slotEl) {
+      slotEl.classList.add('slot-flash');
+      setTimeout(() => slotEl.classList.remove('slot-flash'), 600);
+    }
+    return;
+  }
+
+  // 查找该侧未被钉住且 mountTime 最早的槽位 (LRU)
+  const candidateSlots = Object.values(slots)
+    .filter(s => s.side === card.side && !s.pinned)
+    .sort((a, b) => a.mountTime - b.mountTime);
+
+  if (candidateSlots.length === 0) {
+    const sideSlots = Object.values(slots).filter(s => s.side === card.side);
+    sideSlots.forEach(s => {
+      const el = $(`slot-${s.id}`);
+      if (el) {
+        el.classList.add('slot-flash');
+        setTimeout(() => el.classList.remove('slot-flash'), 600);
+      }
+    });
+    flash('alr', L('该侧槽位均已钉住，请先取消钉住或点 ↻ 指定', 'Slots are pinned, unpin or use ↻ to assign'), 'var(--wn)', 2000);
+    return;
+  }
+
+  const chosenSlot = candidateSlots[0];
+  mountCard(chosenSlot.id, cardId, true);
+  chosenSlot.manualOverride = true; // 软接管生效
+}
+
+// 卡片移到另一侧 (⇄)
+function moveCardToOtherSide(sid) {
+  const currentSlot = slots[sid];
+  if (!currentSlot) return;
+  if (currentSlot.pinned) {
+    flash('alr', L(`槽位 ${sid.toUpperCase()} 已钉住锁定，请先取消钉住`, `Slot ${sid.toUpperCase()} is pinned, unpin before moving`), 'var(--wn)', 1800);
+    return;
+  }
+
+  const targetSlots = sid.startsWith('l') ? ['r1', 'r2'] : ['l1', 'l2'];
+  if (slots[targetSlots[0]].pinned && slots[targetSlots[1]].pinned) {
+    flash('alr', L('对侧槽位均已钉住锁定，无法移入', 'Target side slots are all pinned'), 'var(--wn)', 1800);
+    return;
+  }
+
+  const prefTarget = sid.startsWith('l') ? (sid === 'l1' ? 'r1' : 'r2') : (sid === 'r1' ? 'l1' : 'l2');
+  const targetSlotId = !slots[prefTarget].pinned ? prefTarget : (prefTarget.endsWith('1') ? prefTarget.replace('1', '2') : prefTarget.replace('2', '1'));
+
+  swapSlots(sid, targetSlotId, true);
+  flash('alr', L(`已将卡片与对侧 ${targetSlotId.toUpperCase()} 互换`, `Swapped with ${targetSlotId.toUpperCase()}`), 'var(--ac)', 1800);
+}
+
+// 快速卡片选择菜单 (在槽位内弹出)
+function toggleSlotPicker(sid) {
+  const slotEl = $(`slot-${sid}`);
+  if (!slotEl) return;
+  const menu = slotEl.querySelector('.slot-picker-menu');
+  if (menu && menu.style.display !== 'none') {
+    closeSlotPicker(sid);
+    exitTargetSelectMode();
+    return;
+  }
+  Object.keys(slots).forEach(s => closeSlotPicker(s));
+  enterTargetSelectMode(sid);
+  renderSlotPicker(sid);
+}
+
+function closeSlotPicker(sid) {
+  const slotEl = $(`slot-${sid}`);
+  if (!slotEl) return;
+  const menu = slotEl.querySelector('.slot-picker-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function renderSlotPicker(sid) {
+  const slotEl = $(`slot-${sid}`);
+  if (!slotEl) return;
+  let menu = slotEl.querySelector('.slot-picker-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.className = 'slot-picker-menu';
+    slotEl.appendChild(menu);
+  }
+  menu.style.display = 'flex';
+
+  const sideCards = Object.values(CARDS);
+  const currentCardId = slots[sid].cardId;
+
+  menu.innerHTML = `
+    <div class="spm-hdr">
+      <span>${L('换入卡片至','Select Card for')} ${sid.toUpperCase()}:</span>
+      <button style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:14px" id="spm_close_${sid}">✕</button>
+    </div>
+    <div class="spm-list" style="display:flex;flex-direction:column;gap:5px;overflow-y:auto;flex:1">
+      ${sideCards.map(c => {
+        const inUseSlot = Object.keys(slots).find(k => slots[k].cardId === c.id);
+        const isCurrent = currentCardId === c.id;
+        const isPinned = inUseSlot && slots[inUseSlot].pinned;
+        const badge = isCurrent ? L('当前显示','Current') : isPinned ? `${inUseSlot.toUpperCase()} 📌 ${L('钉住','Pinned')}` : inUseSlot ? `${inUseSlot.toUpperCase()} ${L('在用','In Use')}` : '';
+        return `
+          <div class="spm-item ${isCurrent ? 'current' : inUseSlot ? 'in-use' : ''}" data-cid="${c.id}" ${isPinned ? 'data-pinned="true"' : ''}>
+            <div>
+              <div style="font-weight:600">${L(c.title.zh, c.title.en)}</div>
+              <div style="font-size:10px;color:var(--t2)">${c.summary && V ? c.summary(V) : ''}</div>
+            </div>
+            ${badge ? `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.1)">${badge}</span>` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  menu.querySelector(`#spm_close_${sid}`).onclick = (e) => {
+    e.stopPropagation();
+    closeSlotPicker(sid);
+    exitTargetSelectMode();
+  };
+
+  menu.querySelectorAll('.spm-item').forEach(item => {
+    item.onclick = (e) => {
+      e.stopPropagation();
+      const cid = item.dataset.cid;
+      if (slots[sid].pinned) {
+        flash('alr', L(`槽位 ${sid.toUpperCase()} 已钉住锁定，请先取消钉住`, `Slot ${sid.toUpperCase()} is pinned, unpin first`), 'var(--wn)', 1800);
+        return;
+      }
+      const otherSid = Object.keys(slots).find(k => k !== sid && slots[k].cardId === cid);
+      if (otherSid && slots[otherSid].pinned) {
+        flash('alr', L(`卡片已在钉住的 ${otherSid.toUpperCase()} 槽位锁定`, `Card is locked in pinned ${otherSid.toUpperCase()}`), 'var(--wn)', 1800);
+        return;
+      }
+      if (otherSid) {
+        swapSlots(sid, otherSid, true);
+      } else {
+        mountCard(sid, cid, true);
+      }
+      closeSlotPicker(sid);
+      exitTargetSelectMode();
+    };
+  });
+}
+
+function enterTargetSelectMode(slotId) {
+  exitTargetSelectMode();
+  targetSelectSlot = slotId;
+  const slotEl = $(`slot-${slotId}`);
+  if (slotEl) {
+    slotEl.classList.add('slot-target-select');
+    const swapBtn = slotEl.querySelector('.btn-swap');
+    if (swapBtn) swapBtn.classList.add('active-select');
+  }
+  flash('alr', L(`已选择槽位 ${slotId.toUpperCase()}，请点选菜单或边缘书签`, `Slot ${slotId.toUpperCase()} selected: pick card or bookmark`), 'var(--ac)', 2500);
+}
+
+function exitTargetSelectMode() {
+  if (!targetSelectSlot) return;
+  const slotEl = $(`slot-${targetSelectSlot}`);
+  if (slotEl) {
+    slotEl.classList.remove('slot-target-select');
+    const swapBtn = slotEl.querySelector('.btn-swap');
+    if (swapBtn) swapBtn.classList.remove('active-select');
+  }
+  targetSelectSlot = null;
+}
+
+// ==================== 调度器与预告通知 ====================
+function checkSchedule(currentT) {
+  if (!isAuto || ab || fin) return;
+
+  const schedIdx = SCHEDULE.findIndex(s => currentT >= s.start && currentT < s.end);
+  if (schedIdx === -1) return;
+
+  const currentSched = SCHEDULE[schedIdx];
+  const nextSched = SCHEDULE[schedIdx + 1];
+
+  // 10 秒切换预告
+  if (nextSched && (nextSched.start - currentT) <= 10 && (nextSched.start - currentT) > 0) {
+    showSchedulePreviewNotice(nextSched, Math.ceil(nextSched.start - currentT));
+  } else {
+    hideSchedulePreviewNotice();
+  }
+
+  // 跨越调度节点时触发自动换牌
+  if (schedIdx !== lastScheduleIndex) {
+    lastScheduleIndex = schedIdx;
+    applyScheduledCards(currentSched);
+  }
+}
+
+function showSchedulePreviewNotice(sched, remainSec) {
+  const targets = [
+    { slotId: 'l1', cardId: sched.l1 },
+    { slotId: 'l2', cardId: sched.l2 },
+    { slotId: 'r1', cardId: sched.r1 },
+    { slotId: 'r2', cardId: sched.r2 }
+  ];
+
+  targets.forEach(t => {
+    const slot = slots[t.slotId];
+    if (slot.pinned || slot.keepThisSchedule || slot.cardId === t.cardId) return;
+    const slotEl = $(`slot-${t.slotId}`);
+    if (!slotEl) return;
+    const bar = slotEl.querySelector('.slot-prev-bar');
+    const txt = bar.querySelector('.sp-txt');
+    const btn = bar.querySelector('.sp-btn');
+    const targetCard = CARDS[t.cardId];
+    if (!targetCard) return;
+    bar.style.display = 'flex';
+    txt.textContent = `${L(sched.name.zh, sched.name.en)} −${remainSec}s · ${L('即将切换为','Next:')} ${L(targetCard.title.zh, targetCard.title.en)}`;
+    btn.onclick = () => {
+      slot.keepThisSchedule = true;
+      bar.style.display = 'none';
+      flash('alr', L(`已锁定当前卡片，跳过本次自动切换`, `Kept current card for this phase`), 'var(--ac)', 1800);
+    };
+  });
+}
+
+function hideSchedulePreviewNotice() {
+  document.querySelectorAll('.slot-prev-bar').forEach(bar => bar.style.display = 'none');
+}
+
+function applyScheduledCards(sched) {
+  applySideSchedule(['l1', 'l2'], [sched.l1, sched.l2]);
+  applySideSchedule(['r1', 'r2'], [sched.r1, sched.r2]);
+}
+
+function applySideSchedule(slotIds, scheduledCardIds) {
+  const s0Id = slotIds[0];
+  const s1Id = slotIds[1];
+  const s0 = slots[s0Id];
+  const s1 = slots[s1Id];
+  const target0 = scheduledCardIds[0];
+  const target1 = scheduledCardIds[1];
+
+  const locked0 = s0.pinned || s0.keepThisSchedule;
+  const locked1 = s1.pinned || s1.keepThisSchedule;
+
+  if (s0.keepThisSchedule) s0.keepThisSchedule = false;
+  if (s1.keepThisSchedule) s1.keepThisSchedule = false;
+
+  s0.manualOverride = false;
+  s1.manualOverride = false;
+
+  if (locked0 && locked1) return;
+
+  // 辅助函数：获取该侧未被任何槽位占用的备选卡片 ID
+  const getUnusedSideCard = (excludeIds = []) => {
+    const sideCards = Object.values(CARDS).filter(c => c.side === s0.side);
+    const usedInSlots = Object.values(slots).map(s => s.cardId);
+    const available = sideCards.find(c => !usedInSlots.includes(c.id) && !excludeIds.includes(c.id));
+    return available ? available.id : null;
+  };
+
+  // Case 1: s0 锁定，s1 自由
+  if (locked0 && !locked1) {
+    let desiredCard1 = target1;
+    // 杜绝重复：若 target1 已经位于 s0 或在别的被钉住槽位中
+    const occupier = Object.keys(slots).find(k => slots[k].cardId === desiredCard1);
+    if (occupier) {
+      if (target0 !== s0.cardId && !Object.keys(slots).find(k => slots[k].cardId === target0 && slots[k].pinned)) {
+        desiredCard1 = target0;
+      } else {
+        const alt = getUnusedSideCard([s0.cardId]);
+        if (alt) desiredCard1 = alt;
+      }
+    }
+    if (s1.cardId !== desiredCard1) mountCard(s1Id, desiredCard1, true);
+    return;
+  }
+
+  // Case 2: s0 自由，s1 锁定
+  if (!locked0 && locked1) {
+    let desiredCard0 = target0;
+    const occupier = Object.keys(slots).find(k => slots[k].cardId === desiredCard0);
+    if (occupier) {
+      if (target1 !== s1.cardId && !Object.keys(slots).find(k => slots[k].cardId === target1 && slots[k].pinned)) {
+        desiredCard0 = target1;
+      } else {
+        const alt = getUnusedSideCard([s1.cardId]);
+        if (alt) desiredCard0 = alt;
+      }
+    }
+    if (s0.cardId !== desiredCard0) mountCard(s0Id, desiredCard0, true);
+    return;
+  }
+
+  // Case 3: 两个槽位均自由
+  // 若两槽恰好需要对调
+  if (s0.cardId === target1 && s1.cardId === target0) {
+    swapSlots(s0Id, s1Id, true);
+    return;
+  }
+
+  if (s0.cardId !== target0) mountCard(s0Id, target0, true);
+  if (s1.cardId !== target1) mountCard(s1Id, target1, true);
+}
+
+function checkAlerts(ctx) {
+  // 1. 书签小圆点更新：每次 checkAlerts 均无条件执行，不受弹出冷却影响
+  for (const cardId in CARDS) {
+    const card = CARDS[cardId];
+    if (!card.alert) continue;
+    const al = card.alert(ctx);
+    const dot = $(`bm_al_${cardId}`);
+    if (dot) {
+      dot.style.display = al > 0 ? 'block' : 'none';
+      dot.className = 'bm-alert' + (al === 2 ? ' crit' : '');
+    }
+  }
+
+  // 2. 临界告警自动换入：受开关、中止/结束状态、以及仿真时间冷却 (8秒) 限制
+  if (!alertPopupEnabled || ab || fin) return;
+  if (t - lastAlertPopupSimT < 8) return;
+
+  const activeCardIds = Object.values(slots).map(s => s.cardId);
+  for (const cardId in CARDS) {
+    const card = CARDS[cardId];
+    if (!card.alert) continue;
+    const al = card.alert(ctx);
+    if (al === 2 && !activeCardIds.includes(cardId)) {
+      const unpinned = Object.values(slots)
+        .filter(s => s.side === card.side && !s.pinned)
+        .sort((a, b) => a.mountTime - b.mountTime);
+      if (unpinned.length > 0) {
+        lastAlertPopupSimT = t;
+        mountCard(unpinned[0].id, cardId, true);
+        flash('alr', L('⚠ 临界告警自动换入: ', '⚠ Critical Alert: ') + L(card.title.zh, card.title.en), 'var(--cr)', 2500);
+        break;
+      }
+    }
+  }
+}
+
+// ==================== 仿真循环 Tick 与 Draw ====================
+function tick() {
+  if (run && !ab && !fin) {
+    t = Math.min(END, t + .1 * spd);
+    const s = S(t);
+    // 遥测趋势 60 秒环形采样
+    trendHist.push({ t, kN: s.kN, g: s.g, q: s.q, w: s.w });
+    if (trendHist.length > 50 && trendHist[0].t < t - 65) {
+      trendHist = trendHist.filter(p => p.t >= t - 65);
+    }
+    const b0 = mg(s, t)[0];
+    if (b0.r != null && b0.r < 0) short = true;
+    const ph = P.filter(p => p <= t).length - 1;
+    if (ph !== lp) {
+      lp = ph;
+      ev(L(NZ[ph], NE[ph]));
+      if (ph > 0) flash('fl', L(NZ[ph], NE[ph]), 'var(--tx)', 1800);
+    }
+    if (t >= 420 && !fin) {
+      fin = true;
+      run = false;
+      const bad = s.pg > 4.5 || short;
+      hist.unshift({ b: cfg.burn, k: cfg.stroke, v: s.tdv, g: s.pg, bad });
+      ev(bad ? L('判定: 坠毁', 'Verdict: LOST') : L('判定: 着陆成功', 'Verdict: LANDED'));
+      flash('vd', bad ? 'VEHICLE LOST' : 'TOUCHDOWN CONFIRMED', bad ? 'var(--cr)' : 'var(--ac)', 0);
+    }
+    checkSchedule(t);
+  }
+  draw();
+}
+
+function draw() {
+  const s = S(t), ph = P.filter(p => p <= t).length - 1, m = mg(s, t);
+  V = s;
+
+  // 顶栏与全局提示
+  $('sub').textContent = L('KSC LC-39A · 回收任务', 'KSC LC-39A · RECOVERY');
+  $('bDrw').textContent = L('D · 工程抽屉', 'D · Engineering');
+  $('phn').textContent = ab ? 'ABORT' : L(NE[ph].toUpperCase(), NE[ph].toUpperCase());
+  $('phn').style.color = ab ? 'var(--cr)' : 'var(--ac)';
+  $('phs').textContent = ab ? L('飞行终止', 'Flight terminated') : L(NZ[ph], NE[ph]) + (run ? '' : ' · ' + (fin ? L('已结束', 'ended') : L('待命', 'standby')));
+
+  const bad = m.filter(r => r.s > 0);
+  const a = $('alr');
+  if (bad.length && !ab && !fin && a.style.opacity !== '1') {
+    const r = bad[0];
+    a.style.display = 'inline-block';
+    a.textContent = (r.s > 1 ? L('警告 · ', 'Warning · ') : L('注意 · ', 'Caution · ')) + L(r.z, r.e) + ' ' + r.v;
+    const c = r.s > 1 ? '255,77,94' : '255,176,32';
+    a.style.border = '1px solid rgba(' + c + ',.5)';
+    a.style.background = 'rgba(' + c + ',.08)';
+    a.style.color = r.s > 1 ? 'var(--cr)' : 'var(--wn)';
+  } else if (!bad.length && a.style.opacity !== '1') {
+    a.style.display = 'none';
+  }
+
+  // 驱动当前激活的 4 张卡片执行更新
+  Object.values(slots).forEach(sl => {
+    const card = CARDS[sl.cardId];
+    if (card) {
+      const bodyEl = $(`slot-${sl.id}`).querySelector('.slot-body');
+      card.update(bodyEl, s);
+    }
+  });
+
+  checkAlerts(s);
+
+  // 底栏与时间轴
+  if (!$('nds').children.length) $('nds').innerHTML = NZ.map(() => '<div class="nd f"><b></b><span></span></div>').join('');
+  [...$('nds').children].forEach((e, i) => {
+    const k = i < ph ? 'd' : i == ph ? 'c' : 'f', o = e.dataset.k;
+    e.querySelector('span').textContent = L(NZ[i], NE[i]);
+    if (o !== k) {
+      e.className = 'nd ' + k;
+      e.dataset.k = k;
+      if (o !== undefined) {
+        e.classList.add('pop');
+        setTimeout(() => e.classList.remove('pop'), 700);
+      }
+    }
+    e.classList.toggle('nx', i == ph + 1);
+  });
+  $('tl').classList.toggle('run', run && !ab && !fin);
+
+  const fr = ph >= 8 ? 8 : ph + (t - P[ph]) / (P[ph + 1] - P[ph]);
+  $('pg').style.width = (89 * fr / 8) + '%';
+  $('hdp').style.left = (5.55 + 89 * fr / 8) + '%';
+  $('hlb').textContent = L(NZ[ph], NE[ph]);
+  $('hlb').style.left = cl(5.55 + 89 * fr / 8, 7, 93) + '%';
+
+  $('met').textContent = fT(t);
+  $('nx').textContent = ph < 8 ? L('下一事件 ', 'Next ') + L(NZ[ph + 1], NE[ph + 1]) + ' · ' + Math.ceil(P[ph + 1] - t) + ' s' : L('任务结束', 'End');
+
+  const pl = planSet(t), el = pl.filter(i => !fl[i] && s.th > 0).length;
+  $('ve').textContent = pl.length ? el + ' / ' + pl.length : '—';
+  $('vp').textContent = s.pr.toFixed(0) + '%';
+  $('le').textContent = L('发动机', 'ENG');
+  $('lp').textContent = L('推进剂', 'PROP');
+
+  $('ls').textContent = L('速度', 'SPEED');
+  $('vs').innerHTML = Math.round(s.v * 3.6).toLocaleString() + '<small>km/h</small>';
+  $('la').textContent = L('高度', 'ALT');
+  $('va').innerHTML = s.alt >= 10000 ? (s.alt / 1000).toFixed(1) + '<small>km</small>' : Math.round(s.alt) + '<small>m</small>';
+
+  const gk = run ? 'p' : t > 0 && !fin ? 'r' : 'l';
+  if ($('bGo').dataset.k !== gk + lang) {
+    $('bGo').dataset.k = gk + lang;
+    $('bGo').innerHTML = (run ? PA : PL) + (gk == 'l' ? '<span style="margin-left:8px">' + L('启动发射', 'Launch') + '</span>' : '');
+    $('bGo').setAttribute('aria-label', run ? L('暂停', 'Pause') : gk == 'r' ? L('继续', 'Resume') : L('启动发射', 'Launch'));
+  }
+  $('bRst').textContent = L('重来', 'Reset');
+  $('bSp').textContent = spd + '×';
+  $('bAb').disabled = ab || fin;
+  $('abt').textContent = L('ABORT · 长按', 'ABORT · HOLD');
+
+  if (dr) db();
+}
+
+// ==================== 工程抽屉函数 ====================
+function db() {
+  const s = V, e = $('db');
+  if (tab == 2) { const h = $('hl'); if (h) h.innerHTML = hs(); return; }
+  if (tab == 0) {
+    const ok = s.mass > 0 && s.I / s.mass > 169 && s.I / s.mass < 170;
+    e.innerHTML = [[L('质量', 'Mass'), s.mass.toFixed(1) + ' t'], [L('转动惯量', 'Inertia'), Math.round(s.I).toLocaleString() + ' t·m²'], [L('质量/惯量一致', 'Mass–inertia'), ok ? '✓' : '✗'], [L('大气密度', 'Density'), s.rho.toExponential(2) + ' kg/m³'], [L('马赫', 'Mach'), s.M.toFixed(2)], [L('阻力系数 Cd', 'Cd'), s.Cd.toFixed(3) + (Math.abs(s.M - 1.1) < .3 ? ' ▲' : '')], [L('动压', 'Q'), s.q.toFixed(2) + ' kPa'], [L('阻力', 'Drag'), s.drag.toFixed(1) + ' kN'], [L('热流 ∝ √ρ·v³', 'Heat ∝ √ρ·v³'), s.heat.toFixed(1) + ' kW/m²'], [L('角速度', 'Rate'), s.w.toFixed(2) + ' °/s']].map(r => '<div class="row"><span>' + r[0] + '</span><span class="m">' + r[1] + '</span></div>').join('');
+  }
+  if (tab == 1) {
+    const u = (100 - s.pr) * 5.2, cg = t > 156 ? (t - 156) * .8 : 0;
+    e.innerHTML = [[L('剩余推进剂', 'Remaining'), s.pr.toFixed(2) + '% · ' + ((s.pr) * 5.2).toFixed(1) + ' t'], [L('主发动机消耗', 'Main engines'), (u - cg / 1000).toFixed(1) + ' t'], [L('姿控冷气消耗', 'Cold gas'), cg.toFixed(0) + ' kg'], [L('当前推力', 'Thrust'), Math.round(s.kN) + ' kN'], [L('缓冲行程限值', 'Stroke'), cfg.stroke.toFixed(2) + ' m'], [L('预测触地过载', 'Pred. G'), s.pg.toFixed(2) + ' G']].map(r => '<div class="row"><span>' + r[0] + '</span><span class="m">' + r[1] + '</span></div>').join('') + '<p class="lb" style="margin-top:14px;line-height:1.6;text-transform:none;letter-spacing:0">' + L('姿控消耗计入同一本推进剂账本。', 'Attitude-control use is booked in the same propellant ledger.') + '</p>';
+  }
+  if (tab == 3) e.innerHTML = '<div class="lg">' + (log.length ? log.join('<br>') : L('暂无事件', 'No events')) + '</div>';
+}
+function hs() {
+  return hist.length ? hist.map(h => '<div class="row"><span>' + L('点火', 'Burn') + ' ' + h.b + ' m · ' + h.k.toFixed(2) + ' m</span><span class="m" style="color:' + (h.bad ? 'var(--cr)' : 'var(--ac)') + '">' + h.v.toFixed(1) + ' m/s · ' + h.g.toFixed(1) + ' G</span></div>').join('') : '<div class="lb">' + L('暂无记录', 'No runs yet') + '</div>';
+}
+function showTab() {
+  $('tabs').innerHTML = [['验证', 'Verify'], ['推进', 'Propulsion'], ['调参', 'Tuning'], ['日志', 'Log']].map((n, i) => '<button class="' + (i == tab ? 'on' : '') + '" data-t="' + i + '">' + L(n[0], n[1]) + '</button>').join('');
+  if (tab == 2) {
+    $('db').innerHTML = `
+      <div class="row"><span>${L('着陆点火高度', 'Burn altitude')}</span><span class="m" id="lb1">${cfg.burn} m</span></div>
+      <input type="range" id="s1" min="1800" max="3600" step="100" value="${cfg.burn}">
+      <div class="row" style="margin-top:12px"><span>${L('缓冲行程', 'Stroke')}</span><span class="m" id="lb2">${cfg.stroke.toFixed(2)} m</span></div>
+      <input type="range" id="s2" min="0.3" max="2.6" step="0.05" value="${cfg.stroke}">
+      <div class="row" style="margin-top:16px;border-top:1px solid var(--ln);padding-top:10px">
+        <span>${L('临界告警自动换入卡片', 'Critical Alert Auto-Popup')}</span>
+        <button class="pill" id="s3_alr" style="height:26px;font-size:11px">${alertPopupEnabled ? L('已开启 (ON)', 'ON') : L('已关闭 (OFF)', 'OFF')}</button>
+      </div>
+      <p class="lb" style="text-transform:none;letter-spacing:0;line-height:1.6;margin:12px 0">${L('改参数后点“重来”，运行结果会进入下表。', 'Change values, press Reset; each run is listed below.')}</p>
+      <div id="hl">${hs()}</div>`;
+    $('s1').oninput = e => { cfg.burn = +e.target.value; $('lb1').textContent = cfg.burn + ' m'; };
+    $('s2').oninput = e => { cfg.stroke = +e.target.value; $('lb2').textContent = cfg.stroke.toFixed(2) + ' m'; };
+    const s3 = $('s3_alr');
+    if (s3) s3.onclick = () => { toggleAlertPopup(); showTab(); };
+  } else db();
+}
+
+// ==================== 用户交互控制与持久化 ====================
+function saveSettings() {
+  try {
+    const data = {
+      isAuto,
+      alertPopupEnabled,
+      lang,
+      slots: {
+        l1: { pinned: slots.l1.pinned, cardId: slots.l1.cardId },
+        l2: { pinned: slots.l2.pinned, cardId: slots.l2.cardId },
+        r1: { pinned: slots.r1.pinned, cardId: slots.r1.cardId },
+        r2: { pinned: slots.r2.pinned, cardId: slots.r2.cardId }
+      }
+    };
+    localStorage.setItem('AETHER9_CONSOLE_STATE_V1', JSON.stringify(data));
+  } catch (e) {}
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('AETHER9_CONSOLE_STATE_V1');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (typeof data.isAuto === 'boolean') {
+      isAuto = data.isAuto;
+      const btn = $('bAuto');
+      if (btn) btn.classList.toggle('hold', !isAuto);
+      const txt = $('autoTxt');
+      if (txt) txt.textContent = isAuto ? 'AUTO' : 'HOLD';
+    }
+    if (typeof data.alertPopupEnabled === 'boolean') {
+      alertPopupEnabled = data.alertPopupEnabled;
+      updateAlrPopBtn();
+    }
+    if (data.lang && (data.lang === 'zh' || data.lang === 'en')) {
+      lang = data.lang;
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    }
+    if (data.slots) {
+      const assigned = new Set();
+      const defaultCards = { l1: 'eng1', l2: 'prop', r1: 'stage', r2: 'margin' };
+      ['l1', 'l2', 'r1', 'r2'].forEach(sid => {
+        const sData = data.slots[sid];
+        if (sData && CARDS[sData.cardId] && !assigned.has(sData.cardId)) {
+          assigned.add(sData.cardId);
+          slots[sid].cardId = sData.cardId;
+          slots[sid].pinned = !!sData.pinned;
+        } else {
+          let candidate = defaultCards[sid];
+          if (assigned.has(candidate)) {
+            const sideCards = Object.values(CARDS).filter(c => c.side === slots[sid].side);
+            const found = sideCards.find(c => !assigned.has(c.id));
+            candidate = found ? found.id : Object.keys(CARDS).find(k => !assigned.has(k));
+          }
+          assigned.add(candidate);
+          slots[sid].cardId = candidate;
+          slots[sid].pinned = false;
+        }
+        const pinBtn = $(`slot-${sid}`) ? $(`slot-${sid}`).querySelector('.btn-pin') : null;
+        if (pinBtn) pinBtn.classList.toggle('pinned', slots[sid].pinned);
+      });
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function updateAlrPopBtn() {
+  const btn = $('bAlrPop');
+  if (btn) {
+    btn.classList.toggle('hold', !alertPopupEnabled);
+    const dot = $('alrPopDot');
+    if (dot) dot.style.color = alertPopupEnabled ? 'var(--ac)' : 'var(--t2)';
+    const txt = $('alrPopTxt');
+    if (txt) txt.textContent = alertPopupEnabled ? L('告警: 开', 'ALR: ON') : L('告警: 关', 'ALR: OFF');
+  }
+  const s3 = $('s3_alr');
+  if (s3) s3.textContent = alertPopupEnabled ? L('已开启 (ON)', 'ON') : L('已关闭 (OFF)', 'OFF');
+}
+
+function toggleAlertPopup() {
+  alertPopupEnabled = !alertPopupEnabled;
+  updateAlrPopBtn();
+  saveSettings();
+  flash('alr', alertPopupEnabled ? L('临界告警自动换入已开启 (ON)', 'Alert auto-popup: ON') : L('临界告警自动换入已关闭 (OFF)', 'Alert auto-popup: OFF'), 'var(--ac)', 1800);
+}
+
+function initMobileSwitcher() {
+  const btnL = $('mob-btn-l');
+  const btnR = $('mob-btn-r');
+  if (!btnL || !btnR) return;
+
+  btnL.onclick = () => {
+    document.body.classList.remove('mob-show-right');
+    btnL.classList.add('active');
+    btnR.classList.remove('active');
+  };
+  btnR.onclick = () => {
+    document.body.classList.add('mob-show-right');
+    btnR.classList.add('active');
+    btnL.classList.remove('active');
+  };
+}
+
+function go() {
+  if (fin || ab) return;
+  run = !run;
+  if (run && t == 0) ev(L('倒计时开始', 'Sequence start'));
+  $('vd').style.opacity = 0;
+  draw();
+}
+
+function rst() {
+  t = 0; run = false; ab = false; fin = false; lp = -1; log = []; short = false; fl.fill(0);
+  lastScheduleIndex = -1;
+  lastAlertPopupSimT = -999;
+  trendHist = [];
+  hideSchedulePreviewNotice();
+  exitTargetSelectMode();
+  $('vd').style.opacity = 0;
+  $('fl').style.opacity = 0;
+
+  // 彻底复位槽位状态（清除钉住、清除展开、重置DOM样式）
+  Object.keys(slots).forEach(sid => {
+    slots[sid].pinned = false;
+    slots[sid].expanded = false;
+    slots[sid].manualOverride = false;
+    slots[sid].keepThisSchedule = false;
+    closeSlotPicker(sid);
+    const slotEl = $(`slot-${sid}`);
+    if (slotEl) {
+      slotEl.classList.remove('expanded', 'collapsed', 'slot-target-select', 'slot-flash');
+      const pinBtn = slotEl.querySelector('.btn-pin');
+      if (pinBtn) pinBtn.classList.remove('pinned');
+      const expBtn = slotEl.querySelector('.btn-exp');
+      if (expBtn) expBtn.textContent = '⤢';
+    }
+  });
+
+  // 恢复所有卡片的默认所属侧别
+  const DEFAULT_SIDES = {
+    eng1: 'left', eng2: 'left', prop: 'left', att: 'left', mass: 'left', gonogo: 'left',
+    stage: 'right', margin: 'right', traj: 'right', aero: 'right', heat: 'right', land: 'right', trend: 'right', log: 'right'
+  };
+  Object.keys(DEFAULT_SIDES).forEach(cid => {
+    if (CARDS[cid]) CARDS[cid].side = DEFAULT_SIDES[cid];
+  });
+
+  mountCard('l1', 'eng1', false);
+  mountCard('l2', 'prop', false);
+  mountCard('r1', 'stage', false);
+  mountCard('r2', 'margin', false);
+  saveSettings();
+  draw();
+  if (dr) showTab();
+}
+
+function abort() {
+  if (ab || fin) return;
+  ab = true; run = false; ev('ABORT');
+  flash('vd', 'FLIGHT TERMINATED', 'var(--cr)', 0);
+  draw();
+}
+
+const sp = [1, 2, 5, 10], cs = () => { spd = sp[(sp.indexOf(spd) + 1) % 4]; draw(); };
+const dw = () => { dr = !dr; $('drw').classList.toggle('o', dr); if (dr) showTab(); };
+const lg = () => {
+  lang = lang == 'zh' ? 'en' : 'zh';
+  document.documentElement.lang = lang == 'zh' ? 'zh-CN' : 'en';
+  // 重新挂载所有当前激活卡片，确保卡片内部文字完全切换语言
+  ['l1', 'l2', 'r1', 'r2'].forEach(sid => {
+    const card = CARDS[slots[sid].cardId];
+    const slotEl = $(`slot-${sid}`);
+    if (card && slotEl) {
+      const bodyEl = slotEl.querySelector('.slot-body');
+      const titleEl = slotEl.querySelector('.slot-title');
+      if (titleEl) titleEl.textContent = L(card.title.zh, card.title.en);
+      if (bodyEl) {
+        bodyEl.innerHTML = '';
+        card.mount(bodyEl);
+        if (V) card.update(bodyEl, V);
+      }
+    }
+  });
+  updateAlrPopBtn();
+  renderBookmarks();
+  saveSettings();
+  draw();
+  if (dr) showTab();
+};
+
+const toggleAuto = () => {
+  isAuto = !isAuto;
+  const btn = $('bAuto');
+  btn.classList.toggle('hold', !isAuto);
+  $('autoTxt').textContent = isAuto ? 'AUTO' : 'HOLD';
+  saveSettings();
+  flash('alr', isAuto ? L('自动调度模式已开启 (AUTO)', 'Auto Schedule: AUTO') : L('手动保持模式已开启 (HOLD)', 'Schedule Hold: HOLD'), 'var(--ac)', 1800);
+};
+
+// 槽位头部按钮初始化 (📌 钉住, ⇄ 跨侧互换, ↻ 换卡, ⤢ 展开) 及 HTML5 拖拽换牌
+function initSlotControls() {
+  Object.keys(slots).forEach(sid => {
+    const slotEl = $(`slot-${sid}`);
+    if (!slotEl) return;
+    const pinBtn = slotEl.querySelector('.btn-pin');
+    const moveBtn = slotEl.querySelector('.btn-move');
+    const swapBtn = slotEl.querySelector('.btn-swap');
+    const expBtn = slotEl.querySelector('.btn-exp');
+    const hdr = slotEl.querySelector('.slot-hdr');
+
+    if (pinBtn) {
+      pinBtn.onclick = () => {
+        slots[sid].pinned = !slots[sid].pinned;
+        pinBtn.classList.toggle('pinned', slots[sid].pinned);
+        saveSettings();
+        flash('alr', slots[sid].pinned ? L(`已钉住槽位 ${sid.toUpperCase()} (锁定)`, `Slot ${sid.toUpperCase()} Pinned`) : L(`已取消钉住 ${sid.toUpperCase()}`, `Slot ${sid.toUpperCase()} Unpinned`), 'var(--ac)', 1600);
+      };
+    }
+
+    if (moveBtn) {
+      moveBtn.onclick = () => moveCardToOtherSide(sid);
+    }
+
+    if (swapBtn) {
+      swapBtn.onclick = () => toggleSlotPicker(sid);
+    }
+
+    if (expBtn) {
+      expBtn.onclick = () => {
+        const otherSid = sid.endsWith('1') ? sid.replace('1', '2') : sid.replace('2', '1');
+        const otherEl = $(`slot-${otherSid}`);
+        slots[sid].expanded = !slots[sid].expanded;
+        slotEl.classList.toggle('expanded', slots[sid].expanded);
+        if (otherEl) otherEl.classList.toggle('collapsed', slots[sid].expanded);
+        expBtn.textContent = slots[sid].expanded ? '⤡' : '⤢';
+      };
+    }
+
+    // HTML5 拖放事件
+    if (hdr) {
+      hdr.setAttribute('draggable', 'true');
+      hdr.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', slotId: sid }));
+        e.dataTransfer.effectAllowed = 'move';
+        slotEl.classList.add('dragging');
+      };
+      hdr.ondragend = () => {
+        slotEl.classList.remove('dragging');
+        document.querySelectorAll('.slot-box').forEach(el => el.classList.remove('drag-over'));
+      };
+    }
+
+    slotEl.ondragover = (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      slotEl.classList.add('drag-over');
+    };
+    slotEl.ondragleave = (e) => {
+      if (!slotEl.contains(e.relatedTarget)) slotEl.classList.remove('drag-over');
+    };
+    slotEl.ondrop = (e) => {
+      e.preventDefault();
+      slotEl.classList.remove('drag-over');
+      let data;
+      try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (err) { return; }
+      if (!data) return;
+
+      if (slots[sid].pinned) {
+        flash('alr', L(`目标槽位 ${sid.toUpperCase()} 已钉住锁定，无法换入`, `Slot ${sid.toUpperCase()} is pinned`), 'var(--wn)', 1800);
+        return;
+      }
+
+      if (data.type === 'slot') {
+        const srcSid = data.slotId;
+        if (srcSid && srcSid !== sid) {
+          if (slots[srcSid].pinned) {
+            flash('alr', L(`源槽位 ${srcSid.toUpperCase()} 已钉住锁定，无法移出`, `Source slot ${srcSid.toUpperCase()} is pinned`), 'var(--wn)', 1800);
+            return;
+          }
+          swapSlots(srcSid, sid, true);
+          flash('alr', L(`已交换 ${srcSid.toUpperCase()} 与 ${sid.toUpperCase()}`, `Swapped ${srcSid.toUpperCase()} and ${sid.toUpperCase()}`), 'var(--ac)', 1800);
+        }
+      } else if (data.type === 'bookmark') {
+        const cid = data.cardId;
+        if (cid) {
+          const otherSid = Object.keys(slots).find(k => slots[k].cardId === cid);
+          if (otherSid && slots[otherSid].pinned) {
+            flash('alr', L(`该卡片已在钉住的 ${otherSid.toUpperCase()} 槽位锁定`, `Card is locked in pinned ${otherSid.toUpperCase()}`), 'var(--wn)', 1800);
+            return;
+          }
+          if (otherSid) {
+            swapSlots(sid, otherSid, true);
+          } else {
+            mountCard(sid, cid, true);
+          }
+          flash('alr', L(`已装载卡片至 ${sid.toUpperCase()}`, `Loaded into ${sid.toUpperCase()}`), 'var(--ac)', 1800);
+        }
+      }
+    };
+  });
+}
+
+// 绑定顶栏与底栏事件
+$('bGo').onclick = go;
+$('bRst').onclick = rst;
+$('bSp').onclick = cs;
+$('bAuto').onclick = toggleAuto;
+$('bAlrPop').onclick = toggleAlertPopup;
+
+let hd = null;
+const abE = () => { clearTimeout(hd); hd = null; const f = $('abf'); f.style.transition = 'width .2s'; f.style.width = '0'; };
+const abS = () => {
+  if (hd || ab || fin) return;
+  const f = $('abf');
+  f.style.transition = 'width 1s linear';
+  f.style.width = '100%';
+  hd = setTimeout(() => { abE(); abort(); }, 1000);
+};
+['pointerup', 'pointerleave', 'pointercancel', 'blur', 'keyup'].forEach(n => $('bAb').addEventListener(n, abE));
+$('bAb').addEventListener('pointerdown', abS);
+$('bAb').addEventListener('keydown', e => { if (e.key == ' ' || e.key == 'Enter') { e.preventDefault(); abS(); } });
+$('bDrw').onclick = dw;
+$('bLang').onclick = lg;
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (b) { tab = +b.dataset.t; showTab(); } };
+
+addEventListener('keydown', e => {
+  if (e.target.tagName == 'INPUT' || e.target.id == 'bAb') return;
+  const k = e.key.toLowerCase();
+  if (k == ' ') { e.preventDefault(); go(); }
+  else if (k == 'r') rst();
+  else if (k == 'd') dw();
+  else if (k == 'l') lg();
+  else if (k == 'a') toggleAuto();
+  else if (k == 'x') toggleAlertPopup();
+  else if (k == ']' || k == '[') cs();
+  else if (['1', '2', '3', '4'].includes(k)) {
+    const sids = ['l1', 'l2', 'r1', 'r2'];
+    toggleSlotPicker(sids[+k - 1]);
+  } else if (k == 'p' && targetSelectSlot) {
+    const sid = targetSelectSlot;
+    slots[sid].pinned = !slots[sid].pinned;
+    $(`slot-${sid}`).querySelector('.btn-pin').classList.toggle('pinned', slots[sid].pinned);
+    saveSettings();
+    exitTargetSelectMode();
+  } else if (k == 'm' && targetSelectSlot) {
+    moveCardToOtherSide(targetSelectSlot);
+  }
+});
+
+// 初始化挂载与状态恢复
+initSlotControls();
+initMobileSwitcher();
+const restored = loadSettings();
+if (!restored) {
+  mountCard('l1', 'eng1', false);
+  mountCard('l2', 'prop', false);
+  mountCard('r1', 'stage', false);
+  mountCard('r2', 'margin', false);
+} else {
+  ['l1', 'l2', 'r1', 'r2'].forEach(sid => mountCard(sid, slots[sid].cardId, false));
+}
+updateAlrPopBtn();
+renderBookmarks();
+draw();
+setInterval(tick, 100);
+</script>
+</body>
+</html>

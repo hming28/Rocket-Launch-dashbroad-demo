@@ -1,0 +1,30 @@
+# Runtime caches & browser profiles
+temp_chrome_profile/
+chrome-test-*/
+*.log
+temp_script_*.js
+
+# Antigravity agent logs & session transcripts
+.agents/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Python cache & build files
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec
+
+# Node / Editor configurations
+node_modules/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test outputs & temporary screenshots
+tests/screenshots/
